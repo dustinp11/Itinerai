@@ -1,0 +1,26 @@
+body {
+    font-family: sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#search-container {
+    margin-bottom: 20px;
+}
+
+#search-input {
+    padding: 8px;
+    width: 300px;
+}
+
+#search-btn {
+    padding: 8px 16px;
+}
+
+.place-card {
+    border: 1px solid #ccc;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
