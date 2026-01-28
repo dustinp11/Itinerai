@@ -27,18 +27,26 @@ def search_places(query):
     """Search for places based on query"""
     # result = gmaps.places(query)
     # places = result.get("results", [])
-    places = STATIC_DATA.get("results", [])
+    
+    # Handle both list and dict formats
+    if isinstance(STATIC_DATA, dict):
+        places = STATIC_DATA.get("results", [])
+    else:
+        places = STATIC_DATA
+    
     return [extract_place_info(p) for p in places]
 
 
 @search_bp.route("/search", methods=["GET"])
 def search():
     """Search endpoint for places with MongoDB caching"""
+    print("Received search request")
     query = request.args.get("query", "")
     if not query:
         return jsonify({"error": "query parameter required"}), 400
     
     # Check cache first
+    print(f"Checking cache for query: {query}")
     cached_data = get_cached_results(query)
     if cached_data is not None:
         return jsonify({
@@ -47,6 +55,7 @@ def search():
         })
     
     # If not cached, fetch fresh data
+    print(f"Fetching fresh data for query: {query}")
     places = search_places(query)
     
     # Cache the results in MongoDB
@@ -86,6 +95,7 @@ def clean_cache():
 
 def cache_results(query, places_json):
     """Cache search results in MongoDB"""
+    print(f"Caching results for query: {query}")
     try:
         cache_entry = {
             'query': query,
@@ -106,6 +116,7 @@ def cache_results(query, places_json):
 def get_cached_results(query):
     """Get cached results from MongoDB"""
     try:
+        print(f"Retrieving cached results for query: {query}")
         cached = mongo.db.search_cache.find_one({'query': query})
         
         if not cached:

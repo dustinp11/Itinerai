@@ -2,7 +2,7 @@
 from flask import Flask, jsonify
 from config import Config
 from extensions import mongo, cors
-from routes import user_bp, search_bp
+from routes import search_bp
 
 
 def create_app(config_class=Config):
@@ -15,7 +15,6 @@ def create_app(config_class=Config):
     cors.init_app(app)
 
     # Register blueprints
-    app.register_blueprint(user_bp)
     app.register_blueprint(search_bp)
 
     # Health check route

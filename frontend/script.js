@@ -4,8 +4,9 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     const resultsDiv = document.getElementById("results");
     resultsDiv.innerHTML = "Loading...";
 
-    const response = await fetch(`${API_URL}/search?query=places near UC Irvine`);
-    const places = await response.json();
+    const response = await fetch(`${API_URL}/api/search?query=places near UC Irvine`);
+    const data = await response.json();
+    const places = data.results || data;
 
     resultsDiv.innerHTML = places.map(p => `
         <div class="place-card">
