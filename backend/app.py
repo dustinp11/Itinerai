@@ -16,22 +16,36 @@ CORS(app)
 with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'places_data.json')) as f:
     STATIC_DATA = json.load(f)
 
+# Bayesian average constants
+C = sum(p.get("rating", 0) for p in STATIC_DATA) / len(STATIC_DATA)  # global avg
+m = 50  # minimum ratings threshold
+
+
+def bayesian_avg(rating, num_ratings):
+    sum_R = rating * num_ratings
+    return (C * m + sum_R) / (m + num_ratings)
+
 
 def extract_place_info(place):
+    rating = place.get("rating", 0)
+    num_ratings = place.get("user_ratings_total", 0)
     return {
         "name": place.get("name"),
-        "open_now": place.get("opening_hours", {}).get("open_now"),
+        "open_now": place.get("open_now"),
         "price_level": place.get("price_level"),
-        "rating": place.get("rating"),
-        "user_ratings_total": place.get("user_ratings_total")
+        "rating": rating,
+        "user_ratings_total": num_ratings,
+        "bayesian_score": bayesian_avg(rating, num_ratings)
     }
 
 
 def search_places(query):
     # result = gmaps.places(query)
     # places = result.get("results", [])
-    places = STATIC_DATA.get("results", [])
-    return [extract_place_info(p) for p in places]
+    places = STATIC_DATA  # already a list
+    results = [extract_place_info(p) for p in places]
+    results.sort(key=lambda x: x["bayesian_score"], reverse=True)
+    return results
 
 
 @app.route("/search", methods=["GET"])
