@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Sharetea - UCI",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.3,
+    "user_ratings_total": 223
+  },
+  {
+    "name": "Cha For Tea - University Center",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.3,
+    "user_ratings_total": 551
+  },
+  {
+    "name": "Pink Pig",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 3.9,
+    "user_ratings_total": 56
+  },
+  {
+    "name": "Ever After Tea Room & Eatery",
+    "open_now": true,
+    "price_level": 2,
+    "rating": 4.6,
+    "user_ratings_total": 243
+  },
+  {
+    "name": "TP TEA \u2013 Irvine Main",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.5,
+    "user_ratings_total": 216
+  },
+  {
+    "name": "One Zo Boba - Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.4,
+    "user_ratings_total": 578
+  },
+  {
+    "name": "Jam Jam Tea Lab - Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.6,
+    "user_ratings_total": 130
+  },
+  {
+    "name": "Tea Maru",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 3.8,
+    "user_ratings_total": 110
+  },
+  {
+    "name": "Bopomofo Cafe",
+    "open_now": true,
+    "price_level": null,
+    "rating": 4.4,
+    "user_ratings_total": 45
+  },
+  {
+    "name": "OMOMO TEA SHOPPE",
+    "open_now": true,
+    "price_level": 2,
+    "rating": 4.3,
+    "user_ratings_total": 533
+  },
+  {
+    "name": "MACU TEA - Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4,
+    "user_ratings_total": 100
+  },
+  {
+    "name": "Presotea Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 3.9,
+    "user_ratings_total": 61
+  },
+  {
+    "name": "Boba Square",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4,
+    "user_ratings_total": 87
+  },
+  {
+    "name": "The Alley Irvine",
+    "open_now": true,
+    "price_level": 2,
+    "rating": 4.1,
+    "user_ratings_total": 345
+  },
+  {
+    "name": "Tastea Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.4,
+    "user_ratings_total": 200
+  },
+  {
+    "name": "Boba Guys Costa Mesa",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.3,
+    "user_ratings_total": 106
+  },
+  {
+    "name": "Cha For Tea - Woodbridge Village Center",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.2,
+    "user_ratings_total": 258
+  },
+  {
+    "name": "Sunright Tea Studio - Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.3,
+    "user_ratings_total": 270
+  },
+  {
+    "name": "Wushiland Boba - Irvine",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.3,
+    "user_ratings_total": 57
+  },
+  {
+    "name": "heytea (Irvine Jeffrey)",
+    "open_now": true,
+    "price_level": 2,
+    "rating": 4.5,
+    "user_ratings_total": 656
+  }
+]
