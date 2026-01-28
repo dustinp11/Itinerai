@@ -1,61 +1,34 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from dotenv import load_dotenv
-import json
-import os
-
-# import googlemaps
-
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
-
-app = Flask(__name__)
-CORS(app)
-
-# gmaps = googlemaps.Client(key=os.getenv("GOOGLE_MAPS_API_KEY"))
-
-with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'places_data.json')) as f:
-    STATIC_DATA = json.load(f)
-
-# Bayesian average constants
-C = sum(p.get("rating", 0) for p in STATIC_DATA) / len(STATIC_DATA)  # global avg
-m = 50  # minimum ratings threshold
+"""Main Flask application entry point"""
+from flask import Flask, jsonify
+from config import Config
+from extensions import mongo, cors
+from routes import user_bp, search_bp
 
 
-def bayesian_avg(rating, num_ratings):
-    sum_R = rating * num_ratings
-    return (C * m + sum_R) / (m + num_ratings)
+def create_app(config_class=Config):
+    """Create and configure the Flask application"""
+    app = Flask(__name__)
+    app.config.from_object(config_class)
 
+    # Initialize extensions
+    mongo.init_app(app)
+    cors.init_app(app)
 
-def extract_place_info(place):
-    rating = place.get("rating", 0)
-    num_ratings = place.get("user_ratings_total", 0)
-    return {
-        "name": place.get("name"),
-        "open_now": place.get("open_now"),
-        "price_level": place.get("price_level"),
-        "rating": rating,
-        "user_ratings_total": num_ratings,
-        "bayesian_score": bayesian_avg(rating, num_ratings)
-    }
+    # Register blueprints
+    app.register_blueprint(user_bp)
+    app.register_blueprint(search_bp)
 
+    # Health check route
+    @app.route('/')
+    def health_check():
+        return jsonify({
+            'status': 'healthy',
+            'message': 'Itinerai API is running'
+        })
 
-def search_places(query):
-    # result = gmaps.places(query)
-    # places = result.get("results", [])
-    places = STATIC_DATA  # already a list
-    results = [extract_place_info(p) for p in places]
-    results.sort(key=lambda x: x["bayesian_score"], reverse=True)
-    return results
-
-
-@app.route("/search", methods=["GET"])
-def search():
-    query = request.args.get("query", "")
-    if not query:
-        return jsonify({"error": "query parameter required"}), 400
-    places = search_places(query)
-    return jsonify(places)
+    return app
 
 
 if __name__ == "__main__":
+    app = create_app()
     app.run(debug=True)

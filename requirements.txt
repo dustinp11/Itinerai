@@ -2,3 +2,4 @@ flask
 flask-cors
 googlemaps
 python-dotenv
+Flask-PyMongo
