@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(where:*)",
+      "Bash(dir:*)",
+      "Bash(npx @react-native-reusables/cli@latest add dropdown-menu toggle toggle-group)"
+    ]
+  }
+}
