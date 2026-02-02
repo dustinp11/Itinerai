@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import json
 import os
 
+from preferences import Preference, PreferenceStore
+
+
 # import googlemaps
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -56,6 +59,40 @@ def search():
     places = search_places(query)
     return jsonify(places)
 
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
+@app.route("/users/preferences", methods=["POST"])
+def save_preferences():
+    data = request.get_json(silent=True) or {}
+
+    clerk_user_id = data.get("clerkUserId")
+    prefs = data.get("preferences") or {}
+
+    if not clerk_user_id:
+        return jsonify({"error": "clerkUserId is required"}), 400
+
+    pref_obj = Preference(
+        clerkUserId=str(clerk_user_id),
+        activities=prefs.get("activities", []) or [],
+        budget=str(prefs.get("budget", "")),
+        travelDistance=prefs.get("travelDistance"),
+        transportModes=prefs.get("transportModes", []) or [],
+    )
+
+    PreferenceStore.set(pref_obj)
+
+    return jsonify({"ok": True, "preference": PreferenceStore.get()}), 200
+
+
+@app.route("/users/preferences", methods=["GET"])
+def get_preferences():
+    return jsonify({"ok": True, "preference": PreferenceStore.get()}), 200
+
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=4999, debug=True)
+

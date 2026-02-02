@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeftIcon,
@@ -23,6 +23,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { savePreferences } from "@/lib/api/preferences";
 
 const DISTANCE_OPTIONS = ['5 miles', '10 miles', '25 miles', '50 miles', '100 miles', '250+ miles'];
 
@@ -42,6 +43,7 @@ const TRANSPORT_MODES: TransportMode[] = [
 export default function OnboardingStep3() {
   const { activities, budget } = useLocalSearchParams<{ activities: string; budget: string }>();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [distance, setDistance] = React.useState<string | null>(null);
   const [rankedTransport, setRankedTransport] = React.useState<string[]>([]);
 
@@ -59,25 +61,57 @@ export default function OnboardingStep3() {
     return index === -1 ? null : index + 1;
   }
 
+  // async function onContinue() {
+  //   try {
+  //     await user?.update({
+  //       unsafeMetadata: {
+  //         ...user.unsafeMetadata,
+  //         onboardingComplete: true,
+  //         preferences: {
+  //           activities: activities ? JSON.parse(activities) : [],
+  //           budget,
+  //           travelDistance: distance,
+  //           transportModes: rankedTransport,
+  //         },
+  //       },
+  //     });
+  //     router.replace('/');
+  //   } catch (err) {
+  //     console.error('Failed to save onboarding preferences:', err);
+  //   }
+  // }
   async function onContinue() {
+    if (!user) return;
+
+    const prefs = {
+      activities: activities ? JSON.parse(activities) : [],
+      budget,
+      travelDistance: distance,
+      transportModes: rankedTransport,
+    };
+
     try {
-      await user?.update({
+      await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
           onboardingComplete: true,
-          preferences: {
-            activities: activities ? JSON.parse(activities) : [],
-            budget,
-            travelDistance: distance,
-            transportModes: rankedTransport,
-          },
+          preferences: prefs,
         },
       });
-      router.replace('/');
+
+      const token = await getToken();
+      await savePreferences({
+        clerkUserId: user.id,
+        preferences: prefs,
+        token: token ?? undefined,
+      });
+
+      router.replace("/");
     } catch (err) {
-      console.error('Failed to save onboarding preferences:', err);
+      console.error("Failed to save onboarding preferences:", err);
     }
   }
+
 
   const isValid = distance && rankedTransport.length > 0;
 
