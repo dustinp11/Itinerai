@@ -9,7 +9,7 @@ from preferences import Preference, PreferenceStore
 
 # import googlemaps
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '', '.env'))
 
 app = Flask(__name__)
 CORS(app)
