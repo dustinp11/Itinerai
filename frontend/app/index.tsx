@@ -75,10 +75,15 @@ export default function Screen() {
                 },
               });
               router.replace('/(onboarding)/step1');
-            }}
-          >
+            }}>
             <Icon as={RotateCcwIcon} className="size-4 text-foreground" />
             <Text>Replay Onboarding</Text>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() => router.push('/(create-itinerary)/step2')}>
+            <Text>Create Itinerary</Text>
           </Button>
         </View>
       </View>
