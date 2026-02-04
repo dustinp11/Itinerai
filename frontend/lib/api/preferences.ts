@@ -8,6 +8,11 @@ export type PreferencesPayload = {
   transportModes: string[];
 };
 
+export type GetPreferencesResponse = {
+  ok: boolean;
+  preference: PreferencesPayload;
+};
+
 export async function savePreferences(args: {
   clerkUserId: string;
   preferences: PreferencesPayload;
@@ -19,4 +24,17 @@ export async function savePreferences(args: {
     clerkUserId: args.clerkUserId,
     preferences: args.preferences,
   }, headers);
+}
+
+export async function getPreferences(args: {
+  clerkUserId: string;
+  token?: string;
+}) {
+  const headers = args.token ? { Authorization: `Bearer ${args.token}` } : undefined;
+  const response = await api.get<GetPreferencesResponse>(
+    `/users/preferences`,
+    { clerkUserId: args.clerkUserId },
+    headers
+  );
+  return response.preference;
 }

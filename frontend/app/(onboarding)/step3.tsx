@@ -1,11 +1,6 @@
 import { TransportItem } from '@/components/onboarding/transport-item';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -59,6 +54,14 @@ export default function OnboardingStep3() {
   function getRank(key: string): number | null {
     const index = rankedTransport.indexOf(key);
     return index === -1 ? null : index + 1;
+  }
+
+  function handleDistanceChange(option: any) {
+    setDistance(option?.value || null);
+  }
+
+  function getCurrentDistanceOption() {
+    return distance ? { value: distance, label: distance } : undefined;
   }
 
   // async function onContinue() {
@@ -132,25 +135,22 @@ export default function OnboardingStep3() {
         </View>
 
         <View className="mt-6">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Pressable className="flex-row items-center justify-between rounded-lg border border-border px-4 py-3.5">
-                <Text
-                  className={distance ? 'text-sm font-medium' : 'text-sm text-muted-foreground'}
-                >
-                  {distance ?? 'Select distance (miles)'}
-                </Text>
-                <Icon as={ChevronDownIcon} className="size-4 text-muted-foreground" />
-              </Pressable>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64">
+          <Select value={getCurrentDistanceOption()} onValueChange={handleDistanceChange}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select distance (miles)' />
+              </SelectTrigger>
+            <SelectContent className="w-[88%]">
               {DISTANCE_OPTIONS.map((option) => (
-                <DropdownMenuItem key={option} onPress={() => setDistance(option)}>
+                <SelectItem
+                  key={option}
+                  value={option}
+                  label={option}
+                >
                   <Text>{option}</Text>
-                </DropdownMenuItem>
+                </SelectItem>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </SelectContent>
+          </Select>
         </View>
 
         {/* Transportation section */}
