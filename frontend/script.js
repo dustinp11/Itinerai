@@ -53,9 +53,9 @@ document.getElementById("search-btn").addEventListener("click", async () => {
     resultsDiv.innerHTML = places.map(p => `
         <div class="place-card">
             <strong>${p.name}</strong><br>
-            Rating: ${p.rating || "N/A"} (${p.user_ratings_total || 0} reviews)<br>
-            Price Level: ${p.price_level != null ? "$".repeat(p.price_level) : "N/A"}<br>
-            Open Now: ${p.open_now === true ? "Yes" : p.open_now === false ? "No" : "Unknown"}
+            Rating: ${p.rating || "N/A"} (${p.ratingCount || 0} reviews)<br>
+            Price Level: ${p.priceLevel != null ? "$".repeat(p.priceLevel) : "N/A"}<br>
+            Open Now: ${p.openNow === true ? "Yes" : p.openNow === false ? "No" : "Unknown"}
         </div>
     `).join("");
 });
