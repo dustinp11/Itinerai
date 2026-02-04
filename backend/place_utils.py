@@ -97,4 +97,4 @@ def google_query(api_key, query, budget, start=None, distance=None, mode="DRIVE"
     )
     places = response.json().get("places", [])
     res = [extract_place_info(api_key, place, budget, start, mode, distance) for place in places]
-    return sorted(res, key=lambda x: x["weighted_score"], reverse=True)
+    return sorted(res, key=lambda x: x["score"], reverse=True)
