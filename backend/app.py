@@ -2,47 +2,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
-import googlemaps
+import json
+import requests
 
 from preferences import Preference, PreferenceStore
+from place_utils import google_query
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '', '.env'))
 
 app = Flask(__name__)
 CORS(app)
 
-gmaps = googlemaps.Client(key=os.getenv("GOOGLE_MAPS_API_KEY"))
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
-# bayesian average constants
-C = 3.5  # assumed global average rating
-m = 50   # minimum ratings threshold
+PREFS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'user_preferences.json')
 
 
-def bayesian_avg(rating, num_ratings):
-    sum_R = rating * num_ratings
-    return (C * m + sum_R) / (m + num_ratings)
-
-
-def compute_weighted_score(bayesian_score, price_level, budget):
-    price_level = price_level or 1
-    budget_match = 1 if price_level <= budget else 0
-    return  0.9 * bayesian_score + 0.1 * budget_match
-
-
-def extract_place_info(place, budget):
-    rating = place.get("rating", 0)
-    num_ratings = place.get("user_ratings_total", 0)
-    price_level = place.get("price_level")
-    b_score = bayesian_avg(rating, num_ratings)
-    return {
-        "name": place.get("name"),
-        "open_now": place.get("opening_hours", {}).get("open_now"),
-        "price_level": price_level,
-        "rating": rating,
-        "user_ratings_total": num_ratings,
-        "bayesian_score": b_score,
-        "weighted_score": compute_weighted_score(b_score, price_level, budget)
-    }
 
 
 def build_query(activities, location):
@@ -51,12 +26,13 @@ def build_query(activities, location):
 
 
 def search_places(activities, location, budget):
+    prefs = PreferenceStore.get()
+    distance = int(prefs["travelDistance"]) if prefs.get("travelDistance") else None
+    transport_modes = prefs.get("transportModes", [])
+    mode = transport_modes[0] if transport_modes else "DRIVE"
+
     query = build_query(activities, location)
-    result = gmaps.places(query)
-    places = result.get("results", [])
-    results = [extract_place_info(p, budget) for p in places]
-    results.sort(key=lambda x: x["weighted_score"], reverse=True)
-    return results
+    return google_query(API_KEY, query, budget, start=location, distance=distance, mode=mode)
 
 
 @app.route("/search", methods=["GET"])
@@ -71,6 +47,7 @@ def search():
 
     places = search_places(activities, location, budget)
     return jsonify(places)
+
 
 @app.get("/health")
 def health():

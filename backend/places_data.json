@@ -4,14 +4,14 @@
     "open_now": true,
     "price_level": 1,
     "rating": 4.3,
-    "user_ratings_total": 223
+    "user_ratings_total": 224
   },
   {
     "name": "Cha For Tea - University Center",
     "open_now": true,
     "price_level": 1,
     "rating": 4.3,
-    "user_ratings_total": 551
+    "user_ratings_total": 552
   },
   {
     "name": "Pink Pig",
@@ -21,6 +21,13 @@
     "user_ratings_total": 56
   },
   {
+    "name": "TP TEA \u2013 Irvine Main",
+    "open_now": true,
+    "price_level": 1,
+    "rating": 4.5,
+    "user_ratings_total": 218
+  },
+  {
     "name": "Ever After Tea Room & Eatery",
     "open_now": true,
     "price_level": 2,
@@ -28,11 +35,11 @@
     "user_ratings_total": 243
   },
   {
-    "name": "TP TEA \u2013 Irvine Main",
+    "name": "Tea Maru",
     "open_now": true,
     "price_level": 1,
-    "rating": 4.5,
-    "user_ratings_total": 216
+    "rating": 3.8,
+    "user_ratings_total": 110
   },
   {
     "name": "One Zo Boba - Irvine",
@@ -46,28 +53,7 @@
     "open_now": true,
     "price_level": 1,
     "rating": 4.6,
-    "user_ratings_total": 130
-  },
-  {
-    "name": "Tea Maru",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 3.8,
-    "user_ratings_total": 110
-  },
-  {
-    "name": "Bopomofo Cafe",
-    "open_now": true,
-    "price_level": null,
-    "rating": 4.4,
-    "user_ratings_total": 45
-  },
-  {
-    "name": "OMOMO TEA SHOPPE",
-    "open_now": true,
-    "price_level": 2,
-    "rating": 4.3,
-    "user_ratings_total": 533
+    "user_ratings_total": 131
   },
   {
     "name": "MACU TEA - Irvine",
@@ -75,6 +61,20 @@
     "price_level": 1,
     "rating": 4,
     "user_ratings_total": 100
+  },
+  {
+    "name": "OMOMO TEA SHOPPE",
+    "open_now": true,
+    "price_level": 2,
+    "rating": 4.3,
+    "user_ratings_total": 536
+  },
+  {
+    "name": "Bopomofo Cafe",
+    "open_now": true,
+    "price_level": 0,
+    "rating": 4.4,
+    "user_ratings_total": 45
   },
   {
     "name": "Presotea Irvine",
@@ -95,7 +95,7 @@
     "open_now": true,
     "price_level": 2,
     "rating": 4.1,
-    "user_ratings_total": 345
+    "user_ratings_total": 344
   },
   {
     "name": "Tastea Irvine",
@@ -119,6 +119,13 @@
     "user_ratings_total": 258
   },
   {
+    "name": "Self Serve Boba Bar!",
+    "open_now": true,
+    "price_level": 0,
+    "rating": 4.3,
+    "user_ratings_total": 9
+  },
+  {
     "name": "Sunright Tea Studio - Irvine",
     "open_now": true,
     "price_level": 1,
@@ -131,12 +138,5 @@
     "price_level": 1,
     "rating": 4.3,
     "user_ratings_total": 57
-  },
-  {
-    "name": "heytea (Irvine Jeffrey)",
-    "open_now": true,
-    "price_level": 2,
-    "rating": 4.5,
-    "user_ratings_total": 656
   }
 ]
