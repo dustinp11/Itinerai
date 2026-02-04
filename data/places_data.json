@@ -1,142 +1,182 @@
 [
   {
-    "name": "Sharetea - UCI",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.3,
-    "user_ratings_total": 223
+    "rating": 4.9,
+    "ratingCount": 857,
+    "priceLevel": null,
+    "name": "Chubby Cattle BBQ | Irvine",
+    "openNow": false,
+    "address": "2710 Alton Pkwy #101, Irvine, CA 92606, USA",
+    "score": 2.540154355016538
   },
   {
-    "name": "Cha For Tea - University Center",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.3,
-    "user_ratings_total": 551
-  },
-  {
-    "name": "Pink Pig",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 3.9,
-    "user_ratings_total": 56
-  },
-  {
-    "name": "TP TEA \u2013 Irvine Main",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.5,
-    "user_ratings_total": 216
-  },
-  {
-    "name": "MACU TEA - Irvine",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4,
-    "user_ratings_total": 100
-  },
-  {
-    "name": "One Zo Boba - Irvine",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.4,
-    "user_ratings_total": 578
-  },
-  {
-    "name": "Jam Jam Tea Lab - Irvine",
-    "open_now": true,
-    "price_level": 1,
     "rating": 4.6,
-    "user_ratings_total": 130
+    "ratingCount": 412,
+    "priceLevel": null,
+    "name": "Solstice Seasonal Kitchen & Bar",
+    "openNow": false,
+    "address": "18555 Jamboree Rd, Irvine, CA 92612, USA",
+    "score": 2.414025974025974
   },
   {
-    "name": "Tea Maru",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 3.8,
-    "user_ratings_total": 110
-  },
-  {
-    "name": "OMOMO TEA SHOPPE",
-    "open_now": true,
-    "price_level": 2,
-    "rating": 4.3,
-    "user_ratings_total": 533
-  },
-  {
-    "name": "Bopomofo Cafe",
-    "open_now": true,
-    "price_level": null,
     "rating": 4.4,
-    "user_ratings_total": 45
+    "ratingCount": 230,
+    "priceLevel": null,
+    "name": "Benny and Mary's",
+    "openNow": false,
+    "address": "18420 Von Karman Ave #100, Irvine, CA 92612, USA",
+    "score": 2.3314285714285714
   },
   {
-    "name": "Presotea Irvine",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 3.9,
-    "user_ratings_total": 61
+    "rating": 4.4,
+    "ratingCount": 95,
+    "priceLevel": null,
+    "name": "Warehouse 72 - Irvine",
+    "openNow": true,
+    "address": "17900 Jamboree Rd, Irvine, CA 92614, USA",
+    "score": 2.3048275862068968
   },
   {
-    "name": "Boba Square",
-    "open_now": true,
-    "price_level": 1,
+    "rating": 4.7,
+    "ratingCount": 2635,
+    "priceLevel": 2,
+    "name": "Urban Plates",
+    "openNow": false,
+    "address": "3972 Barranca Pkwy N, Irvine, CA 92606, USA",
+    "score": 2.274785847299814
+  },
+  {
+    "rating": 4.7,
+    "ratingCount": 434,
+    "priceLevel": 2,
+    "name": "Postino Park Place",
+    "openNow": true,
+    "address": "2981 Michelson Dr suite e, Irvine, CA 92612, USA",
+    "score": 2.2510743801652895
+  },
+  {
+    "rating": 4.6,
+    "ratingCount": 693,
+    "priceLevel": 3,
+    "name": "Andrei's Restaurant",
+    "openNow": false,
+    "address": "2607 Main St, Irvine, CA 92614, USA",
+    "score": 2.223849259757739
+  },
+  {
     "rating": 4,
-    "user_ratings_total": 87
+    "ratingCount": 142,
+    "priceLevel": null,
+    "name": "Heirloom Farmhouse Kitchen",
+    "openNow": true,
+    "address": "7905 Irvine Center Dr, Irvine, CA 92618, USA",
+    "score": 2.2
   },
   {
-    "name": "The Alley Irvine",
-    "open_now": true,
-    "price_level": 2,
-    "rating": 4.1,
-    "user_ratings_total": 345
+    "rating": 4.5,
+    "ratingCount": 2248,
+    "priceLevel": 3,
+    "name": "Houston's",
+    "openNow": false,
+    "address": "2991 Michelson Dr, Irvine, CA 92612, USA",
+    "score": 2.1956483899042647
   },
   {
-    "name": "Tastea Irvine",
-    "open_now": true,
-    "price_level": 1,
+    "rating": 4.6,
+    "ratingCount": 199,
+    "priceLevel": 2,
+    "name": "The Goldfinch Restaurant",
+    "openNow": false,
+    "address": "2000 Main St Suite 200, Irvine, CA 92614, USA",
+    "score": 2.1918072289156627
+  },
+  {
+    "rating": 4.5,
+    "ratingCount": 934,
+    "priceLevel": 2,
+    "name": "The Stand - American Classics Redefined",
+    "openNow": false,
+    "address": "5633 Alton Pkwy #200, Irvine, CA 92618, USA",
+    "score": 2.189837398373984
+  },
+  {
+    "rating": 4.5,
+    "ratingCount": 449,
+    "priceLevel": 2,
+    "name": "NEP Cafe - Irvine",
+    "openNow": false,
+    "address": "14346 Culver Dr, Irvine, CA 92604, USA",
+    "score": 2.1799599198396797
+  },
+  {
     "rating": 4.4,
-    "user_ratings_total": 200
+    "ratingCount": 3748,
+    "priceLevel": 2,
+    "name": "North Italia",
+    "openNow": false,
+    "address": "2957 Michelson Dr, Irvine, CA 92612, USA",
+    "score": 2.157893628225382
   },
   {
-    "name": "Boba Guys Costa Mesa",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.3,
-    "user_ratings_total": 106
+    "rating": 4.4,
+    "ratingCount": 2715,
+    "priceLevel": 2,
+    "name": "Lazy Dog Restaurant & Bar",
+    "openNow": true,
+    "address": "13290 Jamboree Rd, Irvine, CA 92602, USA",
+    "score": 2.1571066907775776
   },
   {
-    "name": "heytea (Irvine Jeffrey)",
-    "open_now": true,
-    "price_level": 2,
-    "rating": 4.5,
-    "user_ratings_total": 656
+    "rating": 4.4,
+    "ratingCount": 2336,
+    "priceLevel": 2,
+    "name": "Bosscat Kitchen & Libations",
+    "openNow": false,
+    "address": "18169 Von Karman Ave, Irvine, CA 92612, USA",
+    "score": 2.156647108130763
   },
   {
-    "name": "Wushiland Boba - Irvine",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.3,
-    "user_ratings_total": 57
+    "rating": 4.4,
+    "ratingCount": 1422,
+    "priceLevel": 2,
+    "name": "The Melt",
+    "openNow": true,
+    "address": "665 Spectrum Center Dr, Irvine, CA 92618, USA",
+    "score": 2.1545652173913044
   },
   {
-    "name": "Cha For Tea - Woodbridge Village Center",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.2,
-    "user_ratings_total": 258
+    "rating": 4.4,
+    "ratingCount": 1337,
+    "priceLevel": 2,
+    "name": "Paul Martin\u2019s American Grill",
+    "openNow": false,
+    "address": "534 Spectrum Center Dr, Irvine, CA 92618, USA",
+    "score": 2.1542321557317954
   },
   {
-    "name": "Sunright Tea Studio - Irvine",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.3,
-    "user_ratings_total": 270
+    "rating": 4.4,
+    "ratingCount": 1312,
+    "priceLevel": 2,
+    "name": "Il Fornaio",
+    "openNow": false,
+    "address": "18051 Von Karman Ave, Irvine, CA 92612, USA",
+    "score": 2.1541262848751837
   },
   {
-    "name": "BAKO TEA HOUSE",
-    "open_now": true,
-    "price_level": 1,
-    "rating": 4.5,
-    "user_ratings_total": 152
+    "rating": 4.4,
+    "ratingCount": 1158,
+    "priceLevel": 2,
+    "name": "The Kickin' Crab",
+    "openNow": false,
+    "address": "2740 Alton Pkwy, Irvine, CA 92606, USA",
+    "score": 2.153377483443709
+  },
+  {
+    "rating": 4.1,
+    "ratingCount": 908,
+    "priceLevel": 2,
+    "name": "Irvine Grill",
+    "openNow": false,
+    "address": "6507 Quail Hill Pkwy, Irvine, CA 92603, USA",
+    "score": 2.0379123173277662
   }
 ]

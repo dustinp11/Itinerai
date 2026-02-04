@@ -1,6 +1,6 @@
 // lib/api/client.ts
 const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:5000";
+  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4999";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

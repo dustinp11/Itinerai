@@ -24,8 +24,8 @@ def get_distance(api_key, start, dest, mode="DRIVE"):
         json=json_body,
         headers=headers
     )
-    dist = response.json().get("routes", {})[0].get("distanceMeters", None)
-    return dist
+    routes = response.json().get("routes", [])
+    return routes[0].get("distanceMeters") if routes else None
 
 
 def bayesian_avg(rating, num_ratings):

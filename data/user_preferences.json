@@ -1,5 +1,11 @@
 {
-  "activities": ["Sushi"],
-  "location": ["Buena Park, CA"], 
-  "budget": 4
+  "clerkUserId": "user_39C3cjzIkmDunhCExFiBd1K7qR3",
+  "activities": [
+    "Food & Dining"
+  ],
+  "budget": "budget",
+  "travelDistance": "10 miles",
+  "transportModes": [
+    "car"
+  ]
 }
