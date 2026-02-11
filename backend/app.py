@@ -38,9 +38,8 @@ def map_budget(raw):
         return BUDGET_MAP.get(str(raw), 2)
 
 
-def build_query(activities, location):
-    activities_str = " or ".join(activities)
-    return f"{activities_str} near {location}"
+def build_query(activity, location):
+    return f"{activity} near {location}"
 
 
 def parse_distance_miles(raw):
@@ -66,8 +65,12 @@ def search_places(activities, location, budget):
     prefs = PreferenceStore.get()
     distance = parse_distance_miles(prefs.get("travelDistance"))
 
-    query = build_query(activities, location)
-    return google_query(API_KEY, query, budget, distance=distance)
+    all_places = []
+    for activity in activities:
+        query = build_query(activity, location)
+        results = google_query(API_KEY, query, budget, tag=activity, distance=distance)
+        all_places.extend(results)
+    return sorted(all_places, key=lambda x: x["score"], reverse=True)
 
 
 @app.route("/search", methods=["GET"])
