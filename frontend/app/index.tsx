@@ -59,11 +59,20 @@ export default function Screen() {
           </Text>
         </View>
         <View className="gap-2">
-          <Link href="https://go.clerk.com/8e6CCee" asChild>
-            <Button size="sm">
-              <Text>Explore Clerk Docs</Text>
+            <Button size="sm"
+              variant="outline"
+              onPress={async () => {
+                await user?.update({
+                  unsafeMetadata: {
+                    ...user.unsafeMetadata,
+                    onboardingComplete: true,
+                  },
+                });
+                router.replace('/(create-itinerary)/step1');
+              }}
+            >
+              <Text>Generate Itinerary</Text>
             </Button>
-          </Link>
           <Button
             size="sm"
             variant="outline"
