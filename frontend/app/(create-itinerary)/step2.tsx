@@ -11,10 +11,26 @@ import { ArrowLeftIcon, ArrowRightIcon, Loader2 } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from "expo-router";
+
+import StateAbbrev from "@/assets/us_state_abbrev.json";
+
+
 
 export default function CreateItineraryStep2() {
   const [addedPlaces, setAddedPlaces] = React.useState<Set<string>>(new Set());
-  const selectedCity = 'Irvine, CA';
+  const params = useLocalSearchParams<{
+    country?: string;
+    state?: string;
+    city?: string;
+  }>();
+
+  const country = typeof params.country === "string" ? params.country : "United States";
+  const state = typeof params.state === "string" ? params.state : "";
+  const city = typeof params.city === "string" ? params.city : "";
+  const stateAbbrev = StateAbbrev[state] ?? state;
+
+  const selectedCity = `${city}, ${stateAbbrev}`;
   const { user } = useUser();
   const { getToken } = useAuth();
 
