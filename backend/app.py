@@ -65,11 +65,9 @@ TRANSPORT_MODE_MAP = {
 def search_places(activities, location, budget):
     prefs = PreferenceStore.get()
     distance = parse_distance_miles(prefs.get("travelDistance"))
-    transport_modes = prefs.get("transportModes", [])
-    mode = TRANSPORT_MODE_MAP.get(transport_modes[0], "DRIVE") if transport_modes else "DRIVE"
 
     query = build_query(activities, location)
-    return google_query(API_KEY, query, budget, start=location, distance=distance, mode=mode)
+    return google_query(API_KEY, query, budget, distance=distance)
 
 
 @app.route("/search", methods=["GET"])
