@@ -12,6 +12,8 @@ import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput } from "react-native";
 import { KeyboardAvoidingView, Platform } from "react-native";
+import { Icon } from "@/components/ui/icon";
+import { ArrowLeftIcon } from "lucide-react-native";
 
 
 
@@ -175,11 +177,22 @@ export default function CreateItineraryStep1() {
   }
 
   return (
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      <View style={{ marginBottom: 8 }}>
+        <Pressable
+          onPress={() => (router.canGoBack?.() ? router.back() : router.replace("/"))}
+          className="flex-row items-center gap-1.5 self-start"
+        >
+          <Icon as={ArrowLeftIcon} className="size-4 text-foreground" />
+          <Text className="text-sm font-medium">Back</Text>
+        </Pressable>
+      </View>
       <Text style={styles.h1}>Start your itinerary</Text>
       <Text style={styles.sub}>
         Choose a location. We’ll recommend places and help you build a route step-by-step.
@@ -246,16 +259,22 @@ export default function CreateItineraryStep1() {
 
       <View style={{ height: 24 }} />
     </ScrollView>
+    </SafeAreaView>
+
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#fff" },
+
   container: { flex: 1, backgroundColor: "#fff" },
   content: { padding: 16, gap: 10 },
 
   h1: { fontSize: 24, fontWeight: "700", marginBottom: 2 },
   sub: { color: "#555", marginBottom: 12 },
   label: { fontSize: 12, color: "#444" },
+  topRow: { paddingTop: 6, paddingBottom: 6 },
+
 
   // Country picker (still inline)
   pickerBox: {
