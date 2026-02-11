@@ -99,6 +99,9 @@ export default function OnboardingStep3() {
         },
       });
 
+      await user.reload();
+
+
       const token = await getToken();
       await savePreferences({
         clerkUserId: user.id,
