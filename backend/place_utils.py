@@ -65,7 +65,7 @@ def extract_place_info(query, api_key, place, budget, start=None, distance=None)
         "openNow": place.get("regularOpeningHours", {}).get("openNow"),
         "address": place.get("formattedAddress"),
         "score": weighted_score,
-        "image_url": image_url,
+        "imageUrl": image_url,
     }
 
 

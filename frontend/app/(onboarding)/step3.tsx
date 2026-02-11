@@ -19,6 +19,7 @@ import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { savePreferences } from "@/lib/api/preferences";
+import { useQueryClient } from '@tanstack/react-query';
 
 const DISTANCE_OPTIONS = ['5 miles', '10 miles', '25 miles', '50 miles', '100 miles', '250+ miles'];
 
@@ -39,6 +40,7 @@ export default function OnboardingStep3() {
   const { activities, budget } = useLocalSearchParams<{ activities: string; budget: string }>();
   const { user } = useUser();
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   const [distance, setDistance] = React.useState<string | null>(null);
   const [rankedTransport, setRankedTransport] = React.useState<string[]>([]);
 
@@ -111,6 +113,9 @@ export default function OnboardingStep3() {
         preferences: prefs,
         token: token ?? undefined,
       });
+
+      // Invalidate preferences cache so fresh data is fetched
+      queryClient.invalidateQueries({ queryKey: ['preferences'] });
 
       router.replace("/");
     } catch (err) {
