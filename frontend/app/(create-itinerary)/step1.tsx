@@ -162,7 +162,7 @@ export default function CreateItineraryStep1() {
     if (!city) return Alert.alert("Missing city", "Please select a city.");
 
     router.push({
-      pathname: "/",
+      pathname: "/(create-itinerary)/step2",
       params: {
         country,
         state,
