@@ -1,6 +1,7 @@
 import '@/global.css';
 
 import { NAV_THEME } from '@/lib/theme';
+import { QueryProvider } from '@/lib/query-provider';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ThemeProvider } from '@react-navigation/native';
@@ -20,13 +21,15 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
   return (
-    <ClerkProvider tokenCache={tokenCache}>
-      <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Routes />
-        <PortalHost />
-      </ThemeProvider>
-    </ClerkProvider>
+    <QueryProvider>
+      <ClerkProvider tokenCache={tokenCache}>
+        <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <Routes />
+          <PortalHost />
+        </ThemeProvider>
+      </ClerkProvider>
+    </QueryProvider>
   );
 }
 
@@ -76,6 +79,7 @@ function Routes() {
       <Stack.Protected guard={isSignedIn}>
         <Stack.Screen name="(onboarding)" options={ONBOARDING_SCREEN_OPTIONS} />
         <Stack.Screen name="index" />
+        <Stack.Screen name="(create-itinerary)" options={ITINERARY_SCREEN_OPTIONS} />
       </Stack.Protected>
 
       {/* Screens outside the guards are accessible to everyone (e.g. not found) */}
@@ -102,6 +106,11 @@ const DEFAULT_AUTH_SCREEN_OPTIONS = {
 };
 
 const ONBOARDING_SCREEN_OPTIONS = {
+  headerShown: false,
+  gestureEnabled: false,
+};
+
+const ITINERARY_SCREEN_OPTIONS = {
   headerShown: false,
   gestureEnabled: false,
 };
