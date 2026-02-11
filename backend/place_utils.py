@@ -1,31 +1,15 @@
 import requests
 import json
+import math
 
 
-def get_distance(api_key, start, dest, mode="DRIVE"):
-    headers = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration"
-    }
-
-    json_body = {
-        "origin": {
-            "address": start
-        },
-        "destination": {
-            "address": dest
-        },
-        "travelMode": mode.upper()
-    }
-
-    response = requests.post(
-        "https://routes.googleapis.com/directions/v2:computeRoutes",
-        json=json_body,
-        headers=headers
-    )
-    routes = response.json().get("routes", [])
-    return routes[0].get("distanceMeters") if routes else None
+def get_distance(start, dest):
+    """Compute Euclidean distance between two place objects using their lat/lng coordinates."""
+    start_loc = start.get("location", {})
+    dest_loc = dest.get("location", {})
+    lat1, lng1 = start_loc.get("latitude", 0), start_loc.get("longitude", 0)
+    lat2, lng2 = dest_loc.get("latitude", 0), dest_loc.get("longitude", 0)
+    return math.sqrt((lat2 - lat1) ** 2 + (lng2 - lng1) ** 2)
 
 
 def bayesian_avg(rating, num_ratings):
@@ -35,7 +19,7 @@ def bayesian_avg(rating, num_ratings):
     return (C * m + sum_R) / (m + num_ratings)
 
 
-def compute_weighted_score(api_key, bscore, price, budget, start=None, end=None, distance=None, mode="DRIVE"):
+def compute_weighted_score(bscore, price, budget, start=None, end=None, distance=None):
     """
     Computes weighted score for a place.
     If start/end/distance are not provided, distance is excluded and weights shift to bscore and budget.
@@ -44,14 +28,14 @@ def compute_weighted_score(api_key, bscore, price, budget, start=None, end=None,
     budget_match = 1 if price <= budget else 0
 
     if start and end and distance:
-        dist = get_distance(api_key, start, end, mode=mode)
-        distance_match = 1 if dist and dist <= distance else 0
+        dist = get_distance(start, end)
+        distance_match = 1 if dist <= distance else 0
         return 0.4 * bscore + 0.2 * budget_match + 0.4 * distance_match
 
     return 0.6 * bscore + 0.4 * budget_match
 
 
-def extract_place_info(api_key, place, budget, start=None, mode="DRIVE", distance=None):
+def extract_place_info(query, api_key, place, budget, start=None, distance=None):
     PRICE_LEVEL_MAP = {
         "PRICE_LEVEL_FREE": 0,
         "PRICE_LEVEL_INEXPENSIVE": 1,
@@ -64,7 +48,15 @@ def extract_place_info(api_key, place, budget, start=None, mode="DRIVE", distanc
     num_ratings = place.get("userRatingCount", 0)
     price_level = PRICE_LEVEL_MAP.get(place.get("priceLevel"))
     bscore = bayesian_avg(rating, num_ratings)
-    weighted_score = compute_weighted_score(api_key, bscore, price_level, budget, start=start, end=place.get("formattedAddress"), distance=distance, mode=mode)
+    weighted_score = compute_weighted_score(bscore, price_level, budget, start=start, end=place, distance=distance)
+
+    photos = place.get("photos", [])
+    image_url = None
+    if photos:
+        photo_name = photos[0].get("name")
+        if photo_name:
+            image_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxWidthPx=400&key={api_key}"
+
     return {
         "rating": rating,
         "ratingCount": num_ratings,
@@ -73,10 +65,11 @@ def extract_place_info(api_key, place, budget, start=None, mode="DRIVE", distanc
         "openNow": place.get("regularOpeningHours", {}).get("openNow"),
         "address": place.get("formattedAddress"),
         "score": weighted_score,
+        "image_url": image_url,
     }
 
 
-def google_query(api_key, query, budget, start=None, distance=None, mode="DRIVE"):
+def google_query(api_key, query, budget, start=None, distance=None):
     """Call v2 searchText, extract and score places, return sorted by weighted_score."""
     headers = {
         "Content-Type": "application/json",
@@ -87,7 +80,9 @@ def google_query(api_key, query, budget, start=None, distance=None, mode="DRIVE"
             "places.priceLevel,"
             "places.rating,"
             "places.userRatingCount,"
-            "places.regularOpeningHours"
+            "places.regularOpeningHours,"
+            "places.location,"
+            "places.photos"
         ),
     }
     response = requests.post(
@@ -96,5 +91,5 @@ def google_query(api_key, query, budget, start=None, distance=None, mode="DRIVE"
         headers=headers,
     )
     places = response.json().get("places", [])
-    res = [extract_place_info(api_key, place, budget, start, mode, distance) for place in places]
+    res = [extract_place_info(query, api_key, place, budget, start, distance) for place in places]
     return sorted(res, key=lambda x: x["score"], reverse=True)
