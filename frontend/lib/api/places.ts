@@ -8,6 +8,8 @@ export type PlacesPayload = {
   openNow: boolean;
   address: string;
   score: number;
+  tag?: string;
+  imageUrl?: string;
 };
 
 export async function getPlaces(args: {

@@ -19,6 +19,7 @@ import StateAbbrev from "@/assets/us_state_abbrev.json";
 
 export default function CreateItineraryStep2() {
   const [addedPlaces, setAddedPlaces] = React.useState<Set<string>>(new Set());
+  const [selectedTag, setSelectedTag] = React.useState<string>('All');
   const params = useLocalSearchParams<{
     country?: string;
     state?: string;
@@ -47,6 +48,19 @@ export default function CreateItineraryStep2() {
     },
     staleTime: Infinity,
   });
+
+  // Bucket places by tag
+  const placesByTag = React.useMemo(() => {
+    const buckets: Record<string, any[]> = {};
+    places.forEach((place) => {
+      const tag = place.tag || 'Other';
+      if (!buckets[tag]) {
+        buckets[tag] = [];
+      }
+      buckets[tag].push(place);
+    });
+    return buckets;
+  }, [places]);
 
   const {
     data: preferences,
@@ -79,6 +93,19 @@ export default function CreateItineraryStep2() {
     }
   }, [preferences, preferencesError]);
 
+  // Get all unique tags
+  const allTags = React.useMemo(() => {
+    return ['All', ...Object.keys(placesByTag).sort()];
+  }, [placesByTag]);
+
+  // Filter places based on selected tag
+  const filteredPlaces = React.useMemo(() => {
+    if (selectedTag === 'All') {
+      return places;
+    }
+    return placesByTag[selectedTag] || [];
+  }, [selectedTag, places, placesByTag]);
+
   const handleAddPlace = (placeName: string) => {
     setAddedPlaces((prev) => {
       const newSet = new Set(prev);
@@ -102,10 +129,8 @@ export default function CreateItineraryStep2() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 items-center gap-2 justify-center">
-          <View className="animate-spin">
-            <Icon as={Loader2} size={32} />
-          </View>
+        <View className="flex-1 items-center justify-center gap-2">
+          <Icon as={Loader2} size={32} className="animate-spin" />
           <Text>Loading places...</Text>
         </View>
       </SafeAreaView>
@@ -143,17 +168,49 @@ export default function CreateItineraryStep2() {
           </View>
         </View>
 
+        {/* Horizontal scrolling tag container */}
+        {allTags.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-4 h-[70px] px-6 mb-1"
+            contentContainerClassName="gap-3 pr-6 py-2">
+            {allTags.map((tag) => (
+              <Pressable
+                key={tag}
+                onPress={() => {
+                  console.log('Tag pressed:', tag);
+                  setSelectedTag(tag);
+                }}
+                className={`min-h-[36px] rounded-full px-4 py-2 ${
+                  selectedTag === tag ? 'bg-primary' : 'bg-muted'
+                }`}>
+                {({ pressed }) => (
+                  <Text
+                    className={`text-sm font-medium ${
+                      selectedTag === tag ? 'text-primary-foreground' : 'text-muted-foreground'
+                    } ${pressed ? 'opacity-70' : ''}`}>
+                    {tag}
+                  </Text>
+                )}
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
         <ScrollView
-          className="mt-6 flex-1 px-6 py-4"
+          className="flex px-6"
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-24">
-          <View className="gap-4">
-            {places.map((place, index) => (
+          <View className="gap-4 mt-6">
+            {filteredPlaces.map((place, index) => (
               <PlaceCard
                 key={`${place.name}-${index}`}
                 name={place.name}
                 address={place.address}
                 priceLevel={place.priceLevel}
+                tag={place.tag}
+                imageUrl={place.imageUrl}
                 onAdd={() => handleAddPlace(place.name)}
                 isAdded={addedPlaces.has(place.name)}
               />
