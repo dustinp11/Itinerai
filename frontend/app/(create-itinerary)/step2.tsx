@@ -174,7 +174,7 @@ export default function CreateItineraryStep2() {
             horizontal
             showsHorizontalScrollIndicator={false}
             className="mt-4 h-[70px] px-6 mb-1"
-            contentContainerClassName="gap-3 pr-6 py-2">
+            contentContainerClassName="gap-2 pr-6 py-2">
             {allTags.map((tag) => (
               <Pressable
                 key={tag}
