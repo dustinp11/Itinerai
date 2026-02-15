@@ -35,7 +35,7 @@ def compute_weighted_score(bscore, price, budget, start=None, end=None, distance
     return 0.6 * bscore + 0.4 * budget_match
 
 
-def extract_place_info(query, api_key, place, budget, start=None, distance=None):
+def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
     PRICE_LEVEL_MAP = {
         "PRICE_LEVEL_FREE": 0,
         "PRICE_LEVEL_INEXPENSIVE": 1,
@@ -66,10 +66,11 @@ def extract_place_info(query, api_key, place, budget, start=None, distance=None)
         "address": place.get("formattedAddress"),
         "score": weighted_score,
         "image_url": image_url,
+        "tag": tag
     }
 
 
-def google_query(api_key, query, budget, start=None, distance=None):
+def google_query(api_key, query, budget, tag=None, start=None, distance=None):
     """Call v2 searchText, extract and score places, return sorted by weighted_score."""
     headers = {
         "Content-Type": "application/json",
@@ -91,5 +92,5 @@ def google_query(api_key, query, budget, start=None, distance=None):
         headers=headers,
     )
     places = response.json().get("places", [])
-    res = [extract_place_info(query, api_key, place, budget, start, distance) for place in places]
+    res = [extract_place_info(tag or query, api_key, place, budget, start, distance) for place in places]
     return sorted(res, key=lambda x: x["score"], reverse=True)
