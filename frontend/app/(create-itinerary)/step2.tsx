@@ -7,7 +7,7 @@ import { getPreferences } from '@/lib/api/preferences';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
-import { ArrowLeftIcon, ArrowRightIcon, Loader2 } from 'lucide-react-native';
+import { ArrowLeftIcon, ArrowRightIcon, Loader2, X } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import StateAbbrev from "@/assets/us_state_abbrev.json";
 
 export default function CreateItineraryStep2() {
   const [addedPlaces, setAddedPlaces] = React.useState<Set<string>>(new Set());
+  const [selectedTags, setSelectedTags] = React.useState<Set<string>>(new Set());
   const params = useLocalSearchParams<{
     country?: string;
     state?: string;
@@ -91,6 +92,35 @@ export default function CreateItineraryStep2() {
     });
   };
 
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(tag)) {
+        newSet.delete(tag);
+      } else {
+        newSet.add(tag);
+      }
+      return newSet;
+    });
+  };
+
+  const getAllUniqueTags = (): string[] => {
+    const tagsSet = new Set<string>();
+    places.forEach((place) => {
+      if (place.tag) {
+        tagsSet.add(place.tag);
+      }
+    });
+    return Array.from(tagsSet).sort();
+  };
+
+  const getFilteredPlaces = () => {
+    if (selectedTags.size === 0) {
+      return places;
+    }
+    return places.filter((place) => place.tag && selectedTags.has(place.tag));
+  };
+
   const onContinue = () => {
     // Navigate to summary page with selected places
     router.push({
@@ -143,12 +173,54 @@ export default function CreateItineraryStep2() {
           </View>
         </View>
 
+        {/* Tag Filter */}
+        {getAllUniqueTags().length > 0 && (
+          <View className="mt-4 pt-2 border-t border-border">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-2 px-6 py-3">
+              <Pressable
+                onPress={() => setSelectedTags(new Set())}
+                className={`flex-row items-center gap-1 rounded-full px-3 py-1.5 border ${
+                  selectedTags.size === 0
+                    ? 'bg-primary border-primary'
+                    : 'bg-background border-border'
+                }`}>
+                <Text
+                  className={`text-sm font-medium ${
+                    selectedTags.size === 0 ? 'text-primary-foreground' : 'text-foreground'
+                  }`}>
+                  All
+                </Text>
+              </Pressable>
+              {getAllUniqueTags().map((tag) => (
+                <Pressable
+                  key={tag}
+                  onPress={() => handleToggleTag(tag)}
+                  className={`flex-row items-center gap-1 rounded-full px-3 py-1.5 border ${
+                    selectedTags.has(tag)
+                      ? 'bg-primary border-primary'
+                      : 'bg-background border-border'
+                  }`}>
+                  <Text
+                    className={`text-sm font-medium ${
+                      selectedTags.has(tag) ? 'text-primary-foreground' : 'text-foreground'
+                    }`}>
+                    {tag}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <ScrollView
-          className="mt-6 flex-1 px-6 py-4"
+          className="flex-1 px-6 py-4"
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-24">
           <View className="gap-4">
-            {places.map((place, index) => (
+            {getFilteredPlaces().map((place, index) => (
               <PlaceCard
                 key={`${place.name}-${index}`}
                 name={place.name}
@@ -156,6 +228,8 @@ export default function CreateItineraryStep2() {
                 priceLevel={place.priceLevel}
                 onAdd={() => handleAddPlace(place.name)}
                 isAdded={addedPlaces.has(place.name)}
+                imageUrl={place.image_url}
+                tag={place.tag}
               />
             ))}
           </View>
