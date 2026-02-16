@@ -19,6 +19,7 @@ import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { savePreferences } from "@/lib/api/preferences";
+import { queryClient } from '@/lib/query-provider';
 
 const DISTANCE_OPTIONS = ['5 miles', '10 miles', '25 miles', '50 miles', '100 miles', '250+ miles'];
 
@@ -111,6 +112,9 @@ export default function OnboardingStep3() {
         preferences: prefs,
         token: token ?? undefined,
       });
+
+      // Invalidate preferences cache so new data is fetched
+      queryClient.invalidateQueries({ queryKey: ['preferences', user.id] });
 
       router.replace("/");
     } catch (err) {
