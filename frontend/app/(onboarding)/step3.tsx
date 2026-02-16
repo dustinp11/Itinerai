@@ -116,6 +116,9 @@ export default function OnboardingStep3() {
       // Invalidate preferences cache so new data is fetched
       queryClient.invalidateQueries({ queryKey: ['preferences', user.id] });
 
+      // Invalidate places cache so next search uses updated preferences
+      queryClient.invalidateQueries({ queryKey: ['places'] });
+
       router.replace("/");
     } catch (err) {
       console.error("Failed to save onboarding preferences:", err);
