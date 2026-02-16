@@ -29,7 +29,7 @@ export default function CreateItineraryStep2() {
   const country = typeof params.country === "string" ? params.country : "United States";
   const state = typeof params.state === "string" ? params.state : "";
   const city = typeof params.city === "string" ? params.city : "";
-  const stateAbbrev = StateAbbrev[state] ?? state;
+  const stateAbbrev = StateAbbrev[state as keyof typeof StateAbbrev] ?? state;
 
   const selectedCity = `${city}, ${stateAbbrev}`;
   const { user } = useUser();
@@ -41,11 +41,15 @@ export default function CreateItineraryStep2() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['places', selectedCity],
+    queryKey: ['places', selectedCity, user?.id],
     queryFn: async () => {
-      const response = await getPlaces({ city: selectedCity });
+      const response = await getPlaces({ 
+        city: selectedCity,
+        clerkUserId: user?.id 
+      });
       return response.places;
     },
+    enabled: !!user?.id,
     staleTime: Infinity,
   });
 
@@ -67,7 +71,7 @@ export default function CreateItineraryStep2() {
       return response;
     },
     enabled: !!user?.id,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 0, // Disable caching
   });
 
   React.useEffect(() => {

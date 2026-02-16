@@ -61,8 +61,10 @@ TRANSPORT_MODE_MAP = {
 }
 
 
-def search_places(activities, location, budget):
-    prefs = PreferenceStore.get()
+def search_places(activities, location, budget, clerk_user_id=None):
+    prefs = {}
+    if clerk_user_id:
+        prefs = PreferenceStore.get(clerk_user_id) or {}
     distance = parse_distance_miles(prefs.get("travelDistance"))
 
     all_places = []
@@ -75,7 +77,10 @@ def search_places(activities, location, budget):
 
 @app.route("/search", methods=["GET"])
 def search():
-    prefs = PreferenceStore.get()
+    clerk_user_id = request.args.get("clerkUserId")
+    prefs = {}
+    if clerk_user_id:
+        prefs = PreferenceStore.get(clerk_user_id) or {}
 
     activities_str = request.args.get("activities", "")
     activities = [a.strip() for a in activities_str.split(",") if a.strip()]
@@ -89,7 +94,7 @@ def search():
     if not activities or not city:
         return jsonify({"error": "activities and city are required"}), 400
 
-    places = search_places(activities, city, budget)
+    places = search_places(activities, city, budget, clerk_user_id)
 
     with open(PLACES_PATH, "w") as f:
         json.dump(places, f, indent=2)
@@ -122,12 +127,20 @@ def save_preferences():
 
     PreferenceStore.set(pref_obj)
 
-    return jsonify({"ok": True, "preference": PreferenceStore.get()}), 200
+    return jsonify({"ok": True, "preference": PreferenceStore.get(clerk_user_id)}), 200
 
 
 @app.route("/users/preferences", methods=["GET"])
 def get_preferences():
-    return jsonify({"ok": True, "preference": PreferenceStore.get()}), 200
+    clerk_user_id = request.args.get("clerkUserId")
+    if not clerk_user_id:
+        return jsonify({"error": "clerkUserId is required"}), 400
+    
+    preference = PreferenceStore.get(clerk_user_id)
+    if not preference:
+        return jsonify({"error": "Preferences not found for this user"}), 404
+    
+    return jsonify({"ok": True, "preference": preference}), 200
 
 
 
