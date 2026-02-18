@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { PlusIcon, Check } from 'lucide-react-native';
 import { View, Pressable, Image } from 'react-native';
+import { memo } from 'react';
 
 type PlaceCardProps = {
   name: string;
@@ -16,7 +17,7 @@ type PlaceCardProps = {
   tag?: string;
 };
 
-export function PlaceCard({ name, address, priceLevel, onAdd, isAdded, imageUrl, tag }: PlaceCardProps) {
+export const PlaceCard = memo(function PlaceCard({ name, address, priceLevel, onAdd, isAdded, imageUrl, tag }: PlaceCardProps) {
   const getPriceSymbol = (level: number) => {
     const symbols = ['', '$', '$$', '$$$', '$$$$'];
     return symbols[Math.min(Math.max(level, 0), 4)];
@@ -79,4 +80,4 @@ export function PlaceCard({ name, address, priceLevel, onAdd, isAdded, imageUrl,
       )}
     </Pressable>
   );
-}
+});

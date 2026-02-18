@@ -1,29 +1,68 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { getPinsByItinerary, PinData } from '@/lib/api/pins';
+import { saveItinerary } from '@/lib/api/itineraries';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeftIcon, CheckCircle2Icon, MapPinIcon } from 'lucide-react-native';
+import { ArrowLeftIcon, CheckCircle2Icon, Loader2, MapPinIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ItinerarySummary() {
-  const params = useLocalSearchParams<{ selectedPlaces: string }>();
+  const { itineraryId, city } = useLocalSearchParams<{ itineraryId: string; city: string }>();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = React.useState(false);
 
-  const selectedPlaces = React.useMemo(() => {
+  const { data: pins = [], isLoading } = useQuery({
+    queryKey: ['pins', itineraryId, user?.id],
+    queryFn: () =>
+      getPinsByItinerary({ clerkUserId: user!.id, itineraryId }).then((r) => r.pins),
+    enabled: !!user?.id && !!itineraryId,
+    staleTime: Infinity,
+  });
+
+  const sortedPins = React.useMemo(
+    () => [...pins].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [pins]
+  );
+
+  const totalPlaces = sortedPins.reduce((sum, pin) => sum + pin.places.length, 0);
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+    setIsSaving(true);
     try {
-      return params.selectedPlaces ? JSON.parse(params.selectedPlaces) : [];
-    } catch {
-      return [];
+      await saveItinerary({
+        itineraryId,
+        clerkUserId: user.id,
+        name: `Trip to ${city}`,
+        city,
+        stopCount: sortedPins.length,
+      });
+      queryClient.invalidateQueries({ queryKey: ['itineraries', user.id] });
+      router.replace('/');
+    } catch (err) {
+      console.error('Failed to save itinerary:', err);
+      setIsSaving(false);
     }
-  }, [params.selectedPlaces]);
-
-  const handleCreateItinerary = () => {
-    // TODO: Call API to create itinerary
-    console.log('Creating itinerary with places:', selectedPlaces);
-    router.push('/');
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center gap-2">
+          <View className="animate-spin">
+            <Icon as={Loader2} size={32} />
+          </View>
+          <Text>Loading summary...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -41,7 +80,8 @@ export default function ItinerarySummary() {
           <View className="mt-6 gap-1">
             <Text className="text-3xl font-bold">Itinerary Summary</Text>
             <Text className="text-sm text-muted-foreground">
-              Review your selected places
+              {sortedPins.length} {sortedPins.length === 1 ? 'stop' : 'stops'} · {totalPlaces}{' '}
+              {totalPlaces === 1 ? 'place' : 'places'}
             </Text>
           </View>
         </View>
@@ -50,42 +90,9 @@ export default function ItinerarySummary() {
         <ScrollView
           className="mt-6 flex-1 px-6"
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-24">
-          {/* Places count card */}
-          <Card className="mb-6">
-            <CardContent className="flex-row items-center gap-3 p-4">
-              <View className="h-12 w-12 items-center justify-center rounded-full bg-primary">
-                <Icon as={MapPinIcon} className="size-6 text-primary-foreground" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-2xl font-bold">{selectedPlaces.length} Places</Text>
-                <Text className="text-sm text-muted-foreground">
-                  Added to your itinerary
-                </Text>
-              </View>
-            </CardContent>
-          </Card>
+          contentContainerClassName="pb-24 gap-6">
 
-          {/* Selected places list */}
-          <View className="gap-3">
-            <Text className="text-lg font-semibold">Selected Places</Text>
-            {selectedPlaces.map((placeName: string, index: number) => (
-              <Card key={index}>
-                <CardContent className="flex-row items-center gap-3 p-4">
-                  <View className="h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Text className="font-semibold text-primary">{index + 1}</Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base font-medium">{placeName}</Text>
-                  </View>
-                  <Icon as={CheckCircle2Icon} className="size-5 text-primary" />
-                </CardContent>
-              </Card>
-            ))}
-          </View>
-
-          {/* Empty state */}
-          {selectedPlaces.length === 0 && (
+          {sortedPins.length === 0 ? (
             <View className="flex-1 items-center justify-center py-12">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-muted">
                 <Icon as={MapPinIcon} className="size-8 text-muted-foreground" />
@@ -94,29 +101,57 @@ export default function ItinerarySummary() {
               <Text className="mt-2 text-center text-sm text-muted-foreground">
                 Go back and select some places for your itinerary
               </Text>
-              <Button
-                variant="outline"
-                onPress={() => router.back()}
-                className="mt-6">
+              <Button variant="outline" onPress={() => router.back()} className="mt-6">
                 <Icon as={ArrowLeftIcon} className="size-4" />
                 <Text>Go Back</Text>
               </Button>
             </View>
+          ) : (
+            sortedPins.map((pin, pinIndex) => (
+              <StopSection key={pin.pin_id} pin={pin} stopNumber={pinIndex + 1} />
+            ))
           )}
         </ScrollView>
 
-        {/* Bottom action button */}
-        {selectedPlaces.length > 0 && (
+        {sortedPins.length > 0 && (
           <View className="px-6 pb-6 pt-4">
-            <Button
-              size="lg"
-              onPress={handleCreateItinerary}
-              className="w-full">
-              <Text>Create Itinerary</Text>
+            <Button size="lg" onPress={handleSave} disabled={isSaving} className="w-full">
+              <Icon as={isSaving ? Loader2 : MapPinIcon} className="size-4 text-primary-foreground" />
+              <Text>{isSaving ? 'Saving...' : 'Save Itinerary'}</Text>
             </Button>
           </View>
         )}
       </View>
     </SafeAreaView>
+  );
+}
+
+function StopSection({ pin, stopNumber }: { pin: PinData; stopNumber: number }) {
+  return (
+    <View className="gap-3">
+      <View className="flex-row items-center gap-2">
+        <View className="h-7 w-7 items-center justify-center rounded-full bg-primary">
+          <Text className="text-xs font-bold text-primary-foreground">{stopNumber}</Text>
+        </View>
+        <Text className="text-lg font-semibold">Stop {stopNumber}</Text>
+      </View>
+
+      {pin.places.map((place, i) => (
+        <View
+          key={`${place.name}-${i}`}
+          className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <View className="flex-1 gap-0.5">
+            <Text className="text-base font-medium">{place.name}</Text>
+            {place.address ? (
+              <Text className="text-sm text-muted-foreground">{place.address}</Text>
+            ) : null}
+            {place.tag ? (
+              <Text className="text-xs text-muted-foreground">{place.tag}</Text>
+            ) : null}
+          </View>
+          <Icon as={CheckCircle2Icon} className="size-5 text-primary" />
+        </View>
+      ))}
+    </View>
   );
 }

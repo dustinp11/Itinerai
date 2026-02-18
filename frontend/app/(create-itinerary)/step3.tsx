@@ -3,7 +3,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { Toggle } from '@/components/ui/toggle';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeftIcon, ArrowRightIcon, CircleCheckIcon } from 'lucide-react-native';
+import { ArrowLeftIcon, ArrowRightIcon, CircleCheckIcon, Loader2 } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ const BUDGET_OPTIONS = [
   { key: 'luxury', label: 'Luxury ($150 - $500+)' },
 ];
 
-export default function OnboardingStep2() {
+export default function CreateItineraryStep3() {
   const { activities, country, state, city } = useLocalSearchParams<{
     activities: string;
     country?: string;
@@ -22,10 +22,12 @@ export default function OnboardingStep2() {
     city?: string;
   }>();
   const [selected, setSelected] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   function onContinue() {
+    setIsLoading(true);
     router.push({
-      pathname: '/(onboarding)/step3',
+      pathname: '/(create-itinerary)/step4',
       params: { activities, budget: selected, country, state, city },
     });
   }
@@ -51,8 +53,7 @@ export default function OnboardingStep2() {
               key={option.key}
               variant="outline"
               pressed={selected === option.key}
-              onPressedChange={() => setSelected(option.key)}
-            >
+              onPressedChange={() => setSelected(option.key)}>
               {selected === option.key && (
                 <Icon as={CircleCheckIcon} className="size-5 text-foreground" />
               )}
@@ -63,9 +64,9 @@ export default function OnboardingStep2() {
       </View>
 
       <View className="px-6 pb-6">
-        <Button className="w-full" onPress={onContinue} disabled={!selected}>
+        <Button className="w-full" onPress={onContinue} disabled={!selected || isLoading}>
           <Text>Continue</Text>
-          <Icon as={ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
+          <Icon as={isLoading ? Loader2 : ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
         </Button>
       </View>
     </SafeAreaView>
