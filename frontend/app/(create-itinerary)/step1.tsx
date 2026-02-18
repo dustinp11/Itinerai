@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput } from "react-native";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { ArrowLeftIcon } from "lucide-react-native";
+import { ArrowLeftIcon, Loader2 } from "lucide-react-native";
 
 
 
@@ -153,6 +153,7 @@ export default function CreateItineraryStep1() {
   // Wheel modal controls
   const [stateWheelOpen, setStateWheelOpen] = React.useState(false);
   const [cityWheelOpen, setCityWheelOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   function onContinue() {
     const country = COUNTRIES.find((c) => c.code === countryCode)?.name ?? "";
@@ -163,16 +164,10 @@ export default function CreateItineraryStep1() {
     if (!state) return Alert.alert("Missing state", "Please select a state.");
     if (!city) return Alert.alert("Missing city", "Please select a city.");
 
+    setIsLoading(true);
     router.push({
       pathname: "/(create-itinerary)/step2",
-      params: {
-        country,
-        state,
-        city,
-        round: "1",
-        selected: JSON.stringify([]),
-        pivot: city,
-      },
+      params: { country, state, city },
     });
   }
 
@@ -253,8 +248,9 @@ export default function CreateItineraryStep1() {
 
       <View style={{ height: 12 }} />
 
-      <Button onPress={onContinue} className="mt-4" disabled={!stateName || !cityName}>
+      <Button onPress={onContinue} className="mt-4" disabled={!stateName || !cityName || isLoading}>
         <Text>Continue</Text>
+        {isLoading && <Icon as={Loader2} className="ml-1 size-4 text-primary-foreground" />}
       </Button>
 
       <View style={{ height: 24 }} />

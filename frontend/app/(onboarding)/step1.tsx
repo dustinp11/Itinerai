@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { Toggle } from '@/components/ui/toggle';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeftIcon, ArrowRightIcon, Circle, CircleCheck } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
@@ -21,6 +21,11 @@ const ACTIVITIES = [
 ];
 
 export default function OnboardingStep1() {
+  const { country, state, city } = useLocalSearchParams<{
+    country?: string;
+    state?: string;
+    city?: string;
+  }>();
   const [selected, setSelected] = React.useState<string[]>([]);
 
   function toggleActivity(activity: string) {
@@ -32,7 +37,7 @@ export default function OnboardingStep1() {
   function onContinue() {
     router.push({
       pathname: '/(onboarding)/step2',
-      params: { activities: JSON.stringify(selected) },
+      params: { activities: JSON.stringify(selected), country, state, city },
     });
   }
 

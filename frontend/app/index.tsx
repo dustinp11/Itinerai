@@ -2,101 +2,117 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { UserMenu } from '@/components/user-menu';
+import { getItineraries, ItineraryData } from '@/lib/api/itineraries';
 import { useUser } from '@clerk/clerk-expo';
-import { Link, Stack, router } from 'expo-router';
-import { MoonStarIcon, RotateCcwIcon, XIcon, SunIcon } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Stack, router } from 'expo-router';
+import { MoonStarIcon, PlusIcon, SunIcon, ArrowRightIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
-
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
-
-const CLERK_LOGO = {
-  light: require('@/assets/images/clerk-logo-light.png'),
-  dark: require('@/assets/images/clerk-logo-dark.png'),
-};
-
-const LOGO_STYLE: ImageStyle = {
-  height: 36,
-  width: 40,
-};
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_OPTIONS = {
   header: () => (
-    <View className="top-safe absolute left-0 right-0 flex-row justify-between px-4 py-2 web:mx-2">
-      <ThemeToggle />
-      <UserMenu />
+    <View className="top-safe absolute left-0 right-0 flex-row justify-end px-4 py-2">
+      <View className="flex-row items-center gap-2">
+        <ThemeToggle />
+        <UserMenu />
+      </View>
     </View>
   ),
 };
 
 export default function Screen() {
-  const { colorScheme } = useColorScheme();
   const { user } = useUser();
+
+  const { data: itineraries = [] } = useQuery({
+    queryKey: ['itineraries', user?.id],
+    queryFn: () => getItineraries(user!.id).then((r) => r.itineraries),
+    enabled: !!user?.id,
+  });
+
+  const sortedItineraries = React.useMemo(
+    () => [...itineraries].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [itineraries]
+  );
 
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <View className="flex-row items-center justify-center gap-3.5">
-          <Image
-            source={CLERK_LOGO[colorScheme ?? 'light']}
-            resizeMode="contain"
-            style={LOGO_STYLE}
-          />
-          <Icon as={XIcon} className="mr-1 size-5" />
-          <Image source={LOGO[colorScheme ?? 'light']} style={LOGO_STYLE} resizeMode="contain" />
-        </View>
-        <View className="max-w-sm gap-2 px-4">
-          <Text variant="h1" className="text-3xl font-medium">
-            Make it yours{user?.firstName ? `, ${user.firstName}` : ''}.
-          </Text>
-          <Text className="ios:text-foreground text-center font-mono text-sm text-muted-foreground">
-            Update the screens and components to match your design and logic.
-          </Text>
-        </View>
-        <View className="gap-2">
-            <Button size="sm"
-              variant="outline"
-              onPress={async () => {
-                await user?.update({
-                  unsafeMetadata: {
-                    ...user.unsafeMetadata,
-                    onboardingComplete: true,
-                  },
-                });
-                router.replace('/(create-itinerary)/step1');
-              }}
-            >
-              <Text>Generate Itinerary</Text>
-            </Button>
+      <SafeAreaView className="flex-1 bg-background" edges={['bottom', 'left', 'right']}>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="px-6 mt-[120px] pb-8 gap-8"
+          showsVerticalScrollIndicator={false}>
+
+          {/* Header */}
+          <View className="gap-1">
+            <Text className="text-3xl font-bold">
+              Welcome, {user?.firstName ?? 'user'}
+            </Text>
+            <Text className="text-base text-muted-foreground">
+              Where do you want to travel today?
+            </Text>
+          </View>
+
+          {/* Create new button */}
           <Button
-            size="sm"
             variant="outline"
-            onPress={async () => {
-              await user?.update({
-                unsafeMetadata: {
-                  ...user.unsafeMetadata,
-                  onboardingComplete: false,
-                },
-              });
-              router.replace('/(onboarding)/step1');
-            }}>
-            <Icon as={RotateCcwIcon} className="size-4 text-foreground" />
-            <Text>Replay Onboarding</Text>
+            className="w-full"
+            onPress={() => router.push('/(create-itinerary)/step1')}>
+            <Icon as={PlusIcon} className="size-4 text-foreground" />
+            <Text>Create new</Text>
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => router.push('/(create-itinerary)/step2')}>
-            <Text>Create Itinerary</Text>
-          </Button>
+
+          {/* Past Itineraries */}
+          {sortedItineraries.length > 0 && (
+            <View className="gap-4">
+              <Text className="text-xl font-bold">Past Itineraries</Text>
+              <View className="gap-3">
+                {sortedItineraries.map((itinerary) => (
+                  <ItineraryCard key={itinerary.itinerary_id} itinerary={itinerary} />
+                ))}
+              </View>
+            </View>
+          )}
+
+        </ScrollView>
+      </SafeAreaView>
+    </>
+  );
+}
+
+function formatDate(isoString: string): string {
+  try {
+    return new Date(isoString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return isoString;
+  }
+}
+
+function ItineraryCard({ itinerary }: { itinerary: ItineraryData }) {
+  return (
+    <View className="rounded-2xl border border-border bg-card p-4 gap-3 shadow-sm shadow-black/5">
+      <View className="gap-1">
+        <Text className="text-base font-bold">{itinerary.name}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-sm text-muted-foreground">Created {formatDate(itinerary.created_at)}</Text>
+          <Text className="text-sm text-muted-foreground">{itinerary.stop_count} {itinerary.stop_count === 1 ? 'Stop' : 'Stops'}</Text>
         </View>
       </View>
-    </>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-bold">{itinerary.city}</Text>
+        <Button size="sm" onPress={() => {}}>
+          <Text>View</Text>
+          <Icon as={ArrowRightIcon} className="size-4 text-primary-foreground" />
+        </Button>
+      </View>
+    </View>
   );
 }
 
