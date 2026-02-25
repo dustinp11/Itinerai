@@ -239,12 +239,6 @@ export default function CreateItineraryStep1() {
           className="mt-4"
           disabled={!stateName || !cityName || isLoading}>
           <Text>Continue</Text>
-          {isLoading && (
-            <Icon
-              as={Loader2}
-              className={`ml-1 size-4 text-primary-foreground ${isLoading && 'animate-spin'}`}
-            />
-          )}
         </Button>
 
         <View style={{ height: 24 }} />

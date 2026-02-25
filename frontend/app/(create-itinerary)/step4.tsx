@@ -79,8 +79,9 @@ export default function CreateItineraryStep4() {
   }
 
   async function onContinue() {
-    if (!user) return;
     setIsLoading(true);
+
+    if (!user) return;
 
     const prefs = {
       activities: activities ? JSON.parse(activities) : [],
@@ -175,10 +176,6 @@ export default function CreateItineraryStep4() {
       <View className="px-6 pb-6">
         <Button className="w-full" onPress={onContinue} disabled={!isValid || isLoading}>
           <Text>Continue</Text>
-          <Icon
-            as={isLoading ? Loader2 : ArrowRightIcon}
-            className={`ml-1 size-4 text-primary-foreground ${isLoading && 'animate-spin'}`}
-          />
         </Button>
       </View>
     </SafeAreaView>
