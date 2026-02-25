@@ -57,6 +57,8 @@ def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
         if photo_name:
             image_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxWidthPx=400&key={api_key}"
 
+    location = place.get("location", {})
+
     return {
         "rating": rating,
         "ratingCount": num_ratings,
@@ -66,11 +68,13 @@ def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
         "address": place.get("formattedAddress"),
         "score": weighted_score,
         "image_url": image_url,
-        "tag": tag
+        "tag": tag,
+        "latitude": location.get("latitude"),
+        "longitude": location.get("longitude"),
     }
 
 
-def google_query(api_key, query, budget, tag=None, start=None, distance=None):
+def google_query(api_key, query, budget, tag=None, start=None, distance=None, location_bias=None):
     """Call v2 searchText, extract and score places, return sorted by weighted_score."""
     headers = {
         "Content-Type": "application/json",
@@ -86,9 +90,20 @@ def google_query(api_key, query, budget, tag=None, start=None, distance=None):
             "places.photos"
         ),
     }
+    body = {"textQuery": query}
+    if location_bias:
+        body["locationBias"] = {
+            "circle": {
+                "center": {
+                    "latitude": location_bias["lat"],
+                    "longitude": location_bias["lng"],
+                },
+                "radius": location_bias.get("radius", 5000.0),
+            }
+        }
     response = requests.post(
         "https://places.googleapis.com/v1/places:searchText",
-        json={"textQuery": query},
+        json=body,
         headers=headers,
     )
     places = response.json().get("places", [])

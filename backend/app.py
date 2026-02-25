@@ -110,6 +110,54 @@ def search():
     return jsonify(places)
 
 
+@app.route("/next-places", methods=["POST"])
+def next_places():
+    data = request.get_json(silent=True) or {}
+
+    clerk_user_id = data.get("clerkUserId")
+    selected_places = data.get("selectedPlaces", [])
+    city = data.get("city", "")
+    exclude_names = set(data.get("excludeNames", []))
+
+    prefs = {}
+    if clerk_user_id:
+        prefs = PreferenceStore.get(clerk_user_id) or {}
+
+    budget = map_budget(data.get("budget") or prefs.get("budget", "moderate"))
+
+    coords = [
+        (p["latitude"], p["longitude"])
+        for p in selected_places
+        if p.get("latitude") and p.get("longitude")
+    ]
+    if not coords:
+        return jsonify({"error": "selectedPlaces must include at least one place with coordinates"}), 400
+
+    centroid_lat = sum(lat for lat, _ in coords) / len(coords)
+    centroid_lng = sum(lng for _, lng in coords) / len(coords)
+    location_bias = {"lat": centroid_lat, "lng": centroid_lng, "radius": 5000.0}
+
+    activities = list({p.get("tag") for p in selected_places if p.get("tag")})
+    if not activities:
+        activities = prefs.get("activities", [])
+
+    if not activities:
+        return jsonify({"error": "no activities could be determined from selections or preferences"}), 400
+
+    distance = parse_distance_miles(prefs.get("travelDistance"))
+
+    all_places = []
+    for activity in activities:
+        query = build_query(activity, city)
+        results = google_query(API_KEY, query, budget, tag=activity, distance=distance, location_bias=location_bias)
+        all_places.extend(results)
+
+    all_places = [p for p in all_places if p["name"] not in exclude_names]
+    all_places = sorted(all_places, key=lambda x: x["score"], reverse=True)
+
+    return jsonify(all_places)
+
+
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})
