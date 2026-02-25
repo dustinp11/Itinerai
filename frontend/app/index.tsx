@@ -4,11 +4,12 @@ import { Text } from '@/components/ui/text';
 import { UserMenu } from '@/components/user-menu';
 import { getItineraries, ItineraryData } from '@/lib/api/itineraries';
 import { useUser } from '@clerk/clerk-expo';
-import { useQuery } from '@tanstack/react-query';
-import { Stack, router } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { MoonStarIcon, PlusIcon, SunIcon, ArrowRightIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
+import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,6 +26,13 @@ const SCREEN_OPTIONS = {
 
 export default function Screen() {
   const { user } = useUser();
+  const queryClient = useQueryClient();
+
+  useFocusEffect(
+    useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ['itineraries', user?.id] });
+    }, [queryClient, user?.id])
+  );
 
   const { data: itineraries = [] } = useQuery({
     queryKey: ['itineraries', user?.id],
@@ -107,7 +115,7 @@ function ItineraryCard({ itinerary }: { itinerary: ItineraryData }) {
       </View>
       <View className="flex-row items-center justify-between">
         <Text className="text-base font-bold">{itinerary.city}</Text>
-        <Button size="sm" onPress={() => {}}>
+        <Button size="sm" onPress={() => router.push({ pathname: '/(create-itinerary)/summary', params: { itineraryId: itinerary.itinerary_id, city: itinerary.city, name: itinerary.name } })}>
           <Text>View</Text>
           <Icon as={ArrowRightIcon} className="size-4 text-primary-foreground" />
         </Button>
