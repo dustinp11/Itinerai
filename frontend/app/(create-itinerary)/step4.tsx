@@ -10,15 +10,15 @@ import {
   ArrowRightIcon,
   BusIcon,
   CarIcon,
-  ChevronDownIcon,
   FootprintsIcon,
+  Loader2,
   PlaneIcon,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { savePreferences } from "@/lib/api/preferences";
+import { savePreferences } from '@/lib/api/preferences';
 import { queryClient } from '@/lib/query-provider';
 
 const DISTANCE_OPTIONS = ['5 miles', '10 miles', '25 miles', '50 miles', '100 miles', '250+ miles'];
@@ -36,7 +36,7 @@ const TRANSPORT_MODES: TransportMode[] = [
   { key: 'plane', label: 'Plane', icon: PlaneIcon },
 ];
 
-export default function OnboardingStep3() {
+export default function CreateItineraryStep4() {
   const { activities, budget, country, state, city } = useLocalSearchParams<{
     activities: string;
     budget: string;
@@ -48,6 +48,7 @@ export default function OnboardingStep3() {
   const { getToken } = useAuth();
   const [distance, setDistance] = React.useState<string | null>(null);
   const [rankedTransport, setRankedTransport] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   function toggleTransport(key: string) {
     setRankedTransport((prev) => {
@@ -73,6 +74,7 @@ export default function OnboardingStep3() {
 
   async function onContinue() {
     if (!user) return;
+    setIsLoading(true);
 
     const prefs = {
       activities: activities ? JSON.parse(activities) : [],
@@ -103,14 +105,14 @@ export default function OnboardingStep3() {
       queryClient.invalidateQueries({ queryKey: ['places'] });
 
       router.replace({
-        pathname: '/(create-itinerary)/step2',
+        pathname: '/(create-itinerary)/step5',
         params: { country, state, city },
       });
     } catch (err) {
-      console.error("Failed to save onboarding preferences:", err);
+      console.error('Failed to save preferences:', err);
+      setIsLoading(false);
     }
   }
-
 
   const isValid = distance && rankedTransport.length > 0;
 
@@ -122,7 +124,6 @@ export default function OnboardingStep3() {
           <Text className="text-sm font-medium">Back</Text>
         </Pressable>
 
-        {/* Travel distance section */}
         <View className="mt-10 gap-2">
           <Text className="text-2xl font-bold">How much are you willing to travel?</Text>
           <Text className="text-sm text-muted-foreground">
@@ -133,15 +134,11 @@ export default function OnboardingStep3() {
         <View className="mt-6">
           <Select value={getCurrentDistanceOption()} onValueChange={handleDistanceChange}>
             <SelectTrigger>
-              <SelectValue placeholder='Select distance (miles)' />
-              </SelectTrigger>
+              <SelectValue placeholder="Select distance (miles)" />
+            </SelectTrigger>
             <SelectContent className="w-[88%]">
               {DISTANCE_OPTIONS.map((option) => (
-                <SelectItem
-                  key={option}
-                  value={option}
-                  label={option}
-                >
+                <SelectItem key={option} value={option} label={option}>
                   <Text>{option}</Text>
                 </SelectItem>
               ))}
@@ -149,7 +146,6 @@ export default function OnboardingStep3() {
           </Select>
         </View>
 
-        {/* Transportation section */}
         <View className="mt-10 gap-2">
           <Text className="text-xl font-bold">
             What's your preferred modes of transportation?
@@ -171,9 +167,9 @@ export default function OnboardingStep3() {
       </View>
 
       <View className="px-6 pb-6">
-        <Button className="w-full" onPress={onContinue} disabled={!isValid}>
+        <Button className="w-full" onPress={onContinue} disabled={!isValid || isLoading}>
           <Text>Continue</Text>
-          <Icon as={ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
+          <Icon as={isLoading ? Loader2 : ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
         </Button>
       </View>
     </SafeAreaView>

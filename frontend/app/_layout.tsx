@@ -2,11 +2,11 @@ import '@/global.css';
 
 import { NAV_THEME } from '@/lib/theme';
 import { QueryProvider } from '@/lib/query-provider';
-import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
@@ -37,29 +37,12 @@ SplashScreen.preventAutoHideAsync();
 
 function Routes() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { user } = useUser();
-  const router = useRouter();
-  const segments = useSegments();
-
-  const onboardingComplete = user?.unsafeMetadata?.onboardingComplete === true;
 
   React.useEffect(() => {
     if (isLoaded) {
       SplashScreen.hideAsync();
     }
   }, [isLoaded]);
-
-  React.useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
-
-    const inOnboarding = segments[0] === '(onboarding)';
-
-    if (!onboardingComplete && !inOnboarding) {
-      router.replace('/(onboarding)/step1');
-    } else if (onboardingComplete && inOnboarding) {
-      router.replace('/');
-    }
-  }, [isLoaded, isSignedIn, user, onboardingComplete, segments, router]);
 
   if (!isLoaded) {
     return null;
@@ -77,8 +60,8 @@ function Routes() {
 
       {/* Screens only shown when the user IS signed in */}
       <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name="(onboarding)" options={ONBOARDING_SCREEN_OPTIONS} />
         <Stack.Screen name="index" />
+        <Stack.Screen name="(onboarding)" options={ONBOARDING_SCREEN_OPTIONS} />
         <Stack.Screen name="(create-itinerary)" options={ITINERARY_SCREEN_OPTIONS} />
       </Stack.Protected>
 
