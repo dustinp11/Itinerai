@@ -10,7 +10,25 @@ export type PlacesPayload = {
   score: number;
   tag?: string;
   image_url?: string;
+  latitude?: number;
+  longitude?: number;
 };
+
+export async function getNextPlaces(args: {
+  selectedPlaces: PlacesPayload[];
+  city: string;
+  clerkUserId?: string;
+  excludeNames?: string[];
+  budget?: string;
+}): Promise<PlacesPayload[]> {
+  return api.post<PlacesPayload[]>('/next-places', {
+    selectedPlaces: args.selectedPlaces,
+    city: args.city,
+    clerkUserId: args.clerkUserId,
+    excludeNames: args.excludeNames ?? [],
+    budget: args.budget,
+  });
+}
 
 export async function getPlaces(args: {
   city: string;
