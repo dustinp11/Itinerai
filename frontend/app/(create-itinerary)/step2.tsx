@@ -88,10 +88,6 @@ export default function CreateItineraryStep2() {
           onPress={onContinue}
           disabled={selected.length === 0 || isLoading}>
           <Text>Continue</Text>
-          <Icon
-            as={isLoading ? Loader2 : ArrowRightIcon}
-            className={`ml-1 size-4 text-primary-foreground ${isLoading && 'animate-spin'}`}
-          />
         </Button>
       </View>
     </SafeAreaView>
