@@ -1,6 +1,12 @@
 import { TransportItem } from '@/components/onboarding/transport-item';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -110,7 +116,7 @@ export default function CreateItineraryStep4() {
       });
     } catch (err) {
       console.error('Failed to save preferences:', err);
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 100);
     }
   }
 
@@ -119,7 +125,9 @@ export default function CreateItineraryStep4() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-6 pt-4">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-1.5 self-start">
+        <Pressable
+          onPress={() => router.back()}
+          className="flex-row items-center gap-1.5 self-start">
           <Icon as={ArrowLeftIcon} className="size-4 text-foreground" />
           <Text className="text-sm font-medium">Back</Text>
         </Pressable>
@@ -147,9 +155,7 @@ export default function CreateItineraryStep4() {
         </View>
 
         <View className="mt-10 gap-2">
-          <Text className="text-xl font-bold">
-            What's your preferred modes of transportation?
-          </Text>
+          <Text className="text-xl font-bold">What's your preferred modes of transportation?</Text>
           <Text className="text-sm text-muted-foreground">Rank in order of preference.</Text>
         </View>
 
@@ -169,7 +175,10 @@ export default function CreateItineraryStep4() {
       <View className="px-6 pb-6">
         <Button className="w-full" onPress={onContinue} disabled={!isValid || isLoading}>
           <Text>Continue</Text>
-          <Icon as={isLoading ? Loader2 : ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
+          <Icon
+            as={isLoading ? Loader2 : ArrowRightIcon}
+            className={`ml-1 size-4 text-primary-foreground ${isLoading && 'animate-spin'}`}
+          />
         </Button>
       </View>
     </SafeAreaView>

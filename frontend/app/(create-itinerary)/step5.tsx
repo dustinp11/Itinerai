@@ -5,8 +5,8 @@ import { PlaceCard } from '@/components/create-itinerary/place-card';
 import { FakeMap } from '@/components/create-itinerary/fake-map';
 import { ResizableModal } from '@/components/create-itinerary/resizable-modal';
 import { getPlaces, getNextPlaces, PlacesPayload } from '@/lib/api/places';
-import { savePin, getPin } from '@/lib/api/pins';
-import { useQuery } from '@tanstack/react-query';
+import { savePin, getPin, getPinsByItinerary } from '@/lib/api/pins';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import { ArrowRightIcon, Loader2 } from 'lucide-react-native';
@@ -14,12 +14,13 @@ import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import StateAbbrev from '@/assets/us_state_abbrev.json';
 
 type Pin = {
   id: string;
+  serverId?: string; // server-generated UUID, set after first save
   placeNames: Set<string>;
   isActive: boolean;
   round: number;
@@ -28,6 +29,14 @@ type Pin = {
 const SNAP_POINTS = [0.2, 0.8, 0.95];
 
 export default function CreateItineraryStep5() {
+  const params = useLocalSearchParams<{
+    state?: string;
+    city?: string;
+    selectedCity?: string;
+    itineraryId?: string;
+    hideModal?: string;
+  }>();
+
   const [pins, setPins] = React.useState<Pin[]>([
     { id: 'pin-0', placeNames: new Set<string>(), isActive: true, round: 0 },
   ]);
@@ -37,22 +46,49 @@ export default function CreateItineraryStep5() {
   const [recommendationRound, setRecommendationRound] = React.useState(0);
   const [anchorPlaces, setAnchorPlaces] = React.useState<PlacesPayload[]>([]);
   const [shownNames, setShownNames] = React.useState<string[]>([]);
-  const [hideModal, setHideModal] = React.useState(false);
+  const [hideModal, setHideModal] = React.useState(params.hideModal === 'true');
   const [modalSnapPoint, setModalSnapPoint] = React.useState<number | undefined>(undefined);
-
-  const params = useLocalSearchParams<{
-    state?: string;
-    city?: string;
-  }>();
 
   const state = typeof params.state === 'string' ? params.state : '';
   const city = typeof params.city === 'string' ? params.city : '';
   const stateAbbrev = StateAbbrev[state as keyof typeof StateAbbrev] ?? state;
 
-  const selectedCity = `${city}, ${stateAbbrev}`;
+  const selectedCity = typeof params.selectedCity === 'string'
+    ? params.selectedCity
+    : `${city}, ${stateAbbrev}`;
   const { user } = useUser();
   useAuth(); // available for future authenticated requests
-  const itineraryId = useRef(`itinerary-${Date.now()}`).current;
+  const queryClient = useQueryClient();
+  const isExistingItinerary = typeof params.itineraryId === 'string';
+  const itineraryId = useRef(
+    typeof params.itineraryId === 'string' ? params.itineraryId : `itinerary-${Date.now()}`
+  ).current;
+
+  const {
+    data: existingPinsData,
+    isLoading: isLoadingExistingPins,
+  } = useQuery({
+    queryKey: ['pins', itineraryId, user?.id],
+    queryFn: () => getPinsByItinerary({ clerkUserId: user!.id, itineraryId }).then((r) => r.pins),
+    enabled: isExistingItinerary && !!user?.id,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (!existingPinsData || existingPinsData.length === 0) return;
+    const sorted = [...existingPinsData].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    setPins(
+      sorted.map((pin, index) => ({
+        id: `pin-${index}`,
+        serverId: pin.pin_id,
+        placeNames: new Set(pin.place_names),
+        isActive: index === 0,
+        round: index,
+      }))
+    );
+    setSelectedPlaces(new Set(sorted[0].place_names));
+    setRecommendationRound(0);
+  }, [existingPinsData]);
 
   const {
     data: initialPlaces = [],
@@ -89,7 +125,7 @@ export default function CreateItineraryStep5() {
   });
 
   const places = recommendationRound > 0 ? nextPlacesData : initialPlaces;
-  const isLoading = isLoadingInitial;
+  const isLoading = isLoadingInitial || (isExistingItinerary && isLoadingExistingPins);
   const error = initialError || nextError;
 
   const handleTogglePlaceSelection = useCallback((placeName: string) => {
@@ -138,6 +174,7 @@ export default function CreateItineraryStep5() {
   const handleAddPlacesToCurrentPin = async () => {
     if (activePinIndex === -1) return;
     const pin = pins[activePinIndex];
+    const localId = pin.id;
     const savedPlaceObjects = places.filter((p) => selectedPlaces.has(p.name));
     setAnchorPlaces(savedPlaceObjects);
     setShownNames((prev) => [...new Set([...prev, ...places.map((p) => p.name)])]);
@@ -150,13 +187,23 @@ export default function CreateItineraryStep5() {
     setHideModal(true);
 
     if (user?.id) {
-      savePin({
-        pinId: pin.id,
-        clerkUserId: user.id,
-        itineraryId,
-        placeNames: Array.from(selectedPlaces),
-        places: places.filter((p) => selectedPlaces.has(p.name)),
-      }).catch(console.error);
+      try {
+        const { pin: saved } = await savePin({
+          pinId: pin?.serverId, 
+          clerkUserId: user.id,
+          itineraryId,
+          placeNames: Array.from(selectedPlaces),
+          places: places.filter((p) => selectedPlaces.has(p.name)),
+        });
+        setPins((prev) => {
+          const updated = [...prev];
+          const idx = updated.findIndex((p) => p.id === localId);
+          if (idx !== -1) updated[idx] = { ...updated[idx], serverId: saved.pin_id };
+          return updated;
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -184,15 +231,20 @@ export default function CreateItineraryStep5() {
     setTimeout(() => setModalSnapPoint(undefined), 50);
 
     // Try to load saved selections from backend; fall back to local state
-    try {
-      const { pin: saved } = await getPin(pinId);
-      setSelectedPlaces(new Set(saved.place_names));
-    } catch {
+    if (localPin?.serverId) {
+      try {
+        const { pin: saved } = await getPin(localPin.serverId);
+        setSelectedPlaces(new Set(saved.place_names));
+      } catch {
+        setSelectedPlaces(new Set(localPin.placeNames));
+      }
+    } else {
       setSelectedPlaces(new Set(localPin?.placeNames));
     }
   };
 
   const handleDone = () => {
+    queryClient.invalidateQueries({ queryKey: ['pins', itineraryId, user?.id] });
     router.push({
       pathname: '/(create-itinerary)/summary',
       params: { itineraryId, city: selectedCity },
