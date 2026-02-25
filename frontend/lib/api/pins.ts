@@ -11,14 +11,14 @@ export type PinData = {
 };
 
 export async function savePin(args: {
-  pinId: string;
+  pinId?: string;
   clerkUserId: string;
   itineraryId: string;
   placeNames: string[];
   places: PlacesPayload[];
 }): Promise<{ pin: PinData }> {
   return api.post('/pins', {
-    pinId: args.pinId,
+    ...(args.pinId !== undefined && { pinId: args.pinId }),
     clerkUserId: args.clerkUserId,
     itineraryId: args.itineraryId,
     placeNames: args.placeNames,

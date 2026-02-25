@@ -41,13 +41,16 @@ export default function CreateItineraryStep2() {
       pathname: '/(create-itinerary)/step3',
       params: { activities: JSON.stringify(selected), country, state, city },
     });
+    setTimeout(() => setIsLoading(false), 100);
   }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-6 pt-4">
         {router.canGoBack() && (
-          <Pressable onPress={() => router.back()} className="flex-row items-center gap-1.5 self-start">
+          <Pressable
+            onPress={() => router.back()}
+            className="flex-row items-center gap-1.5 self-start">
             <Icon as={ArrowLeftIcon} className="size-4 text-foreground" />
             <Text className="text-sm font-medium">Back</Text>
           </Pressable>
@@ -69,9 +72,9 @@ export default function CreateItineraryStep2() {
               onPressedChange={() => toggleActivity(activity)}
               className="rounded-full px-4">
               {selected.includes(activity) ? (
-                <Icon as={CircleCheck} className="size-5 text-foreground mr-2" />
+                <Icon as={CircleCheck} className="mr-2 size-5 text-foreground" />
               ) : (
-                <Icon as={Circle} className="size-5 text-muted-foreground mr-2" />
+                <Icon as={Circle} className="mr-2 size-5 text-muted-foreground" />
               )}
               <Text>{activity}</Text>
             </Toggle>
@@ -80,9 +83,11 @@ export default function CreateItineraryStep2() {
       </View>
 
       <View className="px-6 pb-6">
-        <Button className="w-full" onPress={onContinue} disabled={selected.length === 0 || isLoading}>
+        <Button
+          className="w-full"
+          onPress={onContinue}
+          disabled={selected.length === 0 || isLoading}>
           <Text>Continue</Text>
-          <Icon as={isLoading ? Loader2 : ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
         </Button>
       </View>
     </SafeAreaView>
