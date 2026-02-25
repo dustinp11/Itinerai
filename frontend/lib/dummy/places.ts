@@ -59,11 +59,19 @@ const DUMMY_PLACES: PlacesPayload[] = [
 
 export async function getDummyPlaces(args: {
   city: string;
+  round?: number;
 }): Promise<{ places: PlacesPayload[] }> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
-  
-  console.log('Fetching dummy places for city:', args.city);
-  
-  return { places: DUMMY_PLACES };
+
+  console.log('Fetching dummy places for city:', args.city, 'round:', args.round);
+
+  // Generate different names based on round for variety
+  const round = args.round || 0;
+  const placesWithRound = DUMMY_PLACES.map(place => ({
+    ...place,
+    name: `${place.name} (Round ${round})`,
+  }));
+
+  return { places: placesWithRound };
 }
