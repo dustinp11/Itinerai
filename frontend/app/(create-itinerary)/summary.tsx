@@ -10,6 +10,8 @@ import { ArrowLeftIcon, CheckCircle2Icon, Loader2, MapPinIcon } from 'lucide-rea
 import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker } from "react-native-maps";
+
 
 export default function ItinerarySummary() {
   const { itineraryId, city } = useLocalSearchParams<{ itineraryId: string; city: string }>();
@@ -92,6 +94,28 @@ export default function ItinerarySummary() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="pb-24 gap-6">
 
+          {sortedPins.length > 0 && (
+            <View className="overflow-hidden rounded-2xl border border-border bg-card">
+              <MapView
+                style={{ height: 220, width: '100%' }}
+                initialRegion={getInitialRegion(sortedPins)}
+                pitchEnabled={false}
+                rotateEnabled={false}
+                scrollEnabled
+                zoomEnabled
+              >
+                {getAllMarkers(sortedPins).map((m) => (
+                  <Marker
+                    key={m.key}
+                    coordinate={{ latitude: m.latitude, longitude: m.longitude }}
+                    title={m.title}
+                    description={m.description}
+                  />
+                ))}
+              </MapView>
+            </View>
+          )}
+
           {sortedPins.length === 0 ? (
             <View className="flex-1 items-center justify-center py-12">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -154,4 +178,65 @@ function StopSection({ pin, stopNumber }: { pin: PinData; stopNumber: number }) 
       ))}
     </View>
   );
+}
+
+
+function getAllMarkers(pins: PinData[]) {
+  const markers: Array<{
+    key: string;
+    latitude: number;
+    longitude: number;
+    title: string;
+    description?: string;
+  }> = [];
+
+  pins.forEach((pin, pinIndex) => {
+    pin.places.forEach((place: any, placeIndex: number) => {
+      const latitude = place.latitude ?? place.lat;
+      const longitude = place.longitude ?? place.lng;
+
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        markers.push({
+          key: `${pin.pin_id}-${placeIndex}`,
+          latitude,
+          longitude,
+          title: `Stop ${pinIndex + 1}: ${place.name}`,
+          description: place.address,
+        });
+      }
+    });
+  });
+
+  return markers;
+}
+
+function getInitialRegion(pins: PinData[]) {
+  const markers = getAllMarkers(pins);
+
+  // Fallback if you don't have coordinates yet
+  if (markers.length === 0) {
+    return {
+      latitude: 37.7749,
+      longitude: -122.4194,
+      latitudeDelta: 0.25,
+      longitudeDelta: 0.25,
+    };
+  }
+
+  const lats = markers.map((m) => m.latitude);
+  const lngs = markers.map((m) => m.longitude);
+
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  const latitude = (minLat + maxLat) / 2;
+  const longitude = (minLng + maxLng) / 2;
+
+  // Padding so pins aren't on the edge
+  const latitudeDelta = Math.max(0.02, (maxLat - minLat) * 1.6);
+  const longitudeDelta = Math.max(0.02, (maxLng - minLng) * 1.6);
+
+  return { latitude, longitude, latitudeDelta, longitudeDelta };
 }
