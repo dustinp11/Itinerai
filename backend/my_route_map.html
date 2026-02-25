@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_9a6961aeaa9421d8fc05f64371b04093 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_9a6961aeaa9421d8fc05f64371b04093" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_9a6961aeaa9421d8fc05f64371b04093 = L.map(
+                "map_9a6961aeaa9421d8fc05f64371b04093",
+                {
+                    center: [33.650558499999995, -117.8381177],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 14,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_e01a8817ed62b2058b83db6b55f6c295 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_e01a8817ed62b2058b83db6b55f6c295.addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var poly_line_da9c6cbf1f08dff7c67193f3cbe25a7e = L.polyline(
+                [[33.65088, -117.83803], [33.65095, -117.83803], [33.65099, -117.83799], [33.65109, -117.83818], [33.65112, -117.83826], [33.65111, -117.83839], [33.65105, -117.83865], [33.65107, -117.83873], [33.65124, -117.83901], [33.65084, -117.83934], [33.65069, -117.83912], [33.65084, -117.83934], [33.65058, -117.83956], [33.65051, -117.83949], [33.65043, -117.83946], [33.64991, -117.83947], [33.65047, -117.83947], [33.65055, -117.83952], [33.65058, -117.83956], [33.65048, -117.83969], [33.65037, -117.83992], [33.65013, -117.84025], [33.6498, -117.84057], [33.65011, -117.84098], [33.65043, -117.84129], [33.65074, -117.84153], [33.65104, -117.8417], [33.65141, -117.84187], [33.6518, -117.84198], [33.65233, -117.8421], [33.65278, -117.84228], [33.65317, -117.84251], [33.65356, -117.84283], [33.65387, -117.84316], [33.65525, -117.845], [33.65581, -117.84575], [33.65602, -117.84611], [33.65607, -117.84621], [33.6565, -117.8467], [33.65686, -117.84703], [33.65731, -117.84735], [33.65772, -117.84758], [33.65821, -117.84778], [33.66111, -117.84871], [33.66156, -117.84891], [33.66204, -117.84918], [33.66251, -117.84951], [33.66291, -117.84987], [33.66332, -117.8503], [33.6637, -117.8508], [33.66384, -117.85092], [33.66397, -117.8511], [33.66407, -117.8512], [33.66649, -117.85468], [33.66734, -117.85594], [33.66966, -117.85927], [33.67076, -117.8582], [33.6713, -117.85763], [33.67323, -117.85574], [33.67397, -117.85507], [33.67452, -117.85465], [33.67529, -117.85409], [33.6762, -117.85348], [33.67768, -117.85252], [33.67775, -117.85242], [33.67783, -117.85235], [33.68191, -117.84973], [33.68236, -117.84938], [33.68241, -117.84929], [33.68413, -117.84756], [33.68396, -117.84704], [33.68294, -117.84472], [33.68207, -117.84526], [33.6814, -117.8438], [33.68142, -117.84368]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 5}
+            ).addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var marker_4551ac5feb2c6f629ac5d2860e936de8 = L.marker(
+                [33.650558499999995, -117.8381177],
+                {
+}
+            ).addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var icon_c3d6e5b1cda1032e71075fb2db9ef748 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_aff4b15aa75475fe75b5ccac69c0b2e0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3eb77da657dfb1bc66a1c910c01d38a6 = $(`<div id="html_3eb77da657dfb1bc66a1c910c01d38a6" style="width: 100.0%; height: 100.0%;">1. Sharetea - UCI</div>`)[0];
+                popup_aff4b15aa75475fe75b5ccac69c0b2e0.setContent(html_3eb77da657dfb1bc66a1c910c01d38a6);
+            
+        
+
+        marker_4551ac5feb2c6f629ac5d2860e936de8.bindPopup(popup_aff4b15aa75475fe75b5ccac69c0b2e0)
+        ;
+
+        
+    
+    
+            marker_4551ac5feb2c6f629ac5d2860e936de8.bindTooltip(
+                `<div>
+                     Sharetea - UCI
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_4551ac5feb2c6f629ac5d2860e936de8.setIcon(icon_c3d6e5b1cda1032e71075fb2db9ef748);
+            
+    
+            var marker_c357606f0dd543e06aedb5b9ef78fe6d = L.marker(
+                [33.6507179, -117.8389509],
+                {
+}
+            ).addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var icon_e028aaf7d6f37b45ac9b1dc4d189a3ad = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e190e15678bb9cdd233d93edce763cd0 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_51eac5de2ae105a141e299b71cffb15c = $(`<div id="html_51eac5de2ae105a141e299b71cffb15c" style="width: 100.0%; height: 100.0%;">2. Cha For Tea - University Center</div>`)[0];
+                popup_e190e15678bb9cdd233d93edce763cd0.setContent(html_51eac5de2ae105a141e299b71cffb15c);
+            
+        
+
+        marker_c357606f0dd543e06aedb5b9ef78fe6d.bindPopup(popup_e190e15678bb9cdd233d93edce763cd0)
+        ;
+
+        
+    
+    
+            marker_c357606f0dd543e06aedb5b9ef78fe6d.bindTooltip(
+                `<div>
+                     Cha For Tea - University Center
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_c357606f0dd543e06aedb5b9ef78fe6d.setIcon(icon_e028aaf7d6f37b45ac9b1dc4d189a3ad);
+            
+    
+            var marker_9450daa991a7df925f015c1d4ce74bf4 = L.marker(
+                [33.6497695, -117.83902499999998],
+                {
+}
+            ).addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var icon_7fbde485cfaa41d08f9ad938f1dc170a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_412c30597eb520efaaaa73b1dac81ea5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ad616a5dc102cd8e986a7a5a2e4db1e9 = $(`<div id="html_ad616a5dc102cd8e986a7a5a2e4db1e9" style="width: 100.0%; height: 100.0%;">3. Pink Pig</div>`)[0];
+                popup_412c30597eb520efaaaa73b1dac81ea5.setContent(html_ad616a5dc102cd8e986a7a5a2e4db1e9);
+            
+        
+
+        marker_9450daa991a7df925f015c1d4ce74bf4.bindPopup(popup_412c30597eb520efaaaa73b1dac81ea5)
+        ;
+
+        
+    
+    
+            marker_9450daa991a7df925f015c1d4ce74bf4.bindTooltip(
+                `<div>
+                     Pink Pig
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9450daa991a7df925f015c1d4ce74bf4.setIcon(icon_7fbde485cfaa41d08f9ad938f1dc170a);
+            
+    
+            var marker_9c078139c607e14c9a7e8a0cf77b4588 = L.marker(
+                [33.681553199999996, -117.8436525],
+                {
+}
+            ).addTo(map_9a6961aeaa9421d8fc05f64371b04093);
+        
+    
+            var icon_85639f7c298bc5a78da0a1cc3c063f71 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_081ceb58afd08ae2943d1b2daba82b5d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_33bfb401dd3eff68fa1a3ac9e32622b8 = $(`<div id="html_33bfb401dd3eff68fa1a3ac9e32622b8" style="width: 100.0%; height: 100.0%;">4. TP TEA – Irvine Main</div>`)[0];
+                popup_081ceb58afd08ae2943d1b2daba82b5d.setContent(html_33bfb401dd3eff68fa1a3ac9e32622b8);
+            
+        
+
+        marker_9c078139c607e14c9a7e8a0cf77b4588.bindPopup(popup_081ceb58afd08ae2943d1b2daba82b5d)
+        ;
+
+        
+    
+    
+            marker_9c078139c607e14c9a7e8a0cf77b4588.bindTooltip(
+                `<div>
+                     TP TEA – Irvine Main
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9c078139c607e14c9a7e8a0cf77b4588.setIcon(icon_85639f7c298bc5a78da0a1cc3c063f71);
+            
+</script>
+</html>

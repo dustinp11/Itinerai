@@ -1,11 +1,17 @@
 {
-  "clerkUserId": "user_39C3cjzIkmDunhCExFiBd1K7qR3",
-  "activities": [
-    "Food & Dining"
-  ],
-  "budget": "budget",
-  "travelDistance": "10 miles",
-  "transportModes": [
-    "car"
-  ]
+  "user_39C3cjzIkmDunhCExFiBd1K7qR3": {
+    "clerkUserId": "user_39C3cjzIkmDunhCExFiBd1K7qR3",
+    "activities": [
+      "Food & Dining",
+      "Shopping"
+    ],
+    "budget": "moderate",
+    "travelDistance": "10 miles",
+    "transportModes": [
+      "car",
+      "walking",
+      "public",
+      "plane"
+    ]
+  }
 }

@@ -4,8 +4,7 @@ import { Text } from '@/components/ui/text';
 import { PlaceCard } from '@/components/create-itinerary/place-card';
 import { FakeMap } from '@/components/create-itinerary/fake-map';
 import { ResizableModal } from '@/components/create-itinerary/resizable-modal';
-import { getPlaces } from '@/lib/api/places';
-import { getDummyPlaces } from '@/lib/dummy/places';
+import { getPlaces, getNextPlaces, PlacesPayload } from '@/lib/api/places';
 import { savePin, getPin } from '@/lib/api/pins';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -36,6 +35,8 @@ export default function CreateItineraryStep5() {
   const [selectedTags, setSelectedTags] = React.useState<Set<string>>(new Set());
   const [centerOnLastPin, setCenterOnLastPin] = React.useState(false);
   const [recommendationRound, setRecommendationRound] = React.useState(0);
+  const [anchorPlaces, setAnchorPlaces] = React.useState<PlacesPayload[]>([]);
+  const [shownNames, setShownNames] = React.useState<string[]>([]);
   const [hideModal, setHideModal] = React.useState(false);
   const [modalSnapPoint, setModalSnapPoint] = React.useState<number | undefined>(undefined);
 
@@ -71,25 +72,25 @@ export default function CreateItineraryStep5() {
   });
 
   const {
-    data: dummyPlacesData = [],
-    isLoading: isLoadingDummy,
-    error: dummyError,
+    data: nextPlacesData = [],
+    isLoading: isLoadingNext,
+    error: nextError,
   } = useQuery({
-    queryKey: ['dummyPlaces', selectedCity, recommendationRound],
-    queryFn: async () => {
-      const response = await getDummyPlaces({
+    queryKey: ['next-places', selectedCity, user?.id, recommendationRound],
+    queryFn: () =>
+      getNextPlaces({
+        selectedPlaces: anchorPlaces,
         city: selectedCity,
-        round: recommendationRound,
-      });
-      return response.places;
-    },
-    enabled: recommendationRound > 0,
+        clerkUserId: user?.id,
+        excludeNames: shownNames,
+      }),
+    enabled: recommendationRound > 0 && anchorPlaces.length > 0,
     staleTime: Infinity,
   });
 
-  const places = recommendationRound > 0 ? dummyPlacesData : initialPlaces;
+  const places = recommendationRound > 0 ? nextPlacesData : initialPlaces;
   const isLoading = isLoadingInitial;
-  const error = initialError || dummyError;
+  const error = initialError || nextError;
 
   const handleTogglePlaceSelection = useCallback((placeName: string) => {
     setSelectedPlaces((prev) => {
@@ -137,6 +138,9 @@ export default function CreateItineraryStep5() {
   const handleAddPlacesToCurrentPin = async () => {
     if (activePinIndex === -1) return;
     const pin = pins[activePinIndex];
+    const savedPlaceObjects = places.filter((p) => selectedPlaces.has(p.name));
+    setAnchorPlaces(savedPlaceObjects);
+    setShownNames((prev) => [...new Set([...prev, ...places.map((p) => p.name)])]);
     setPins((prev) => {
       const updated = [...prev];
       updated[activePinIndex] = { ...updated[activePinIndex], placeNames: new Set(selectedPlaces) };
@@ -280,7 +284,7 @@ export default function CreateItineraryStep5() {
               </View>
             )}
 
-            {isLoadingDummy && (
+            {isLoadingNext && recommendationRound > 0 && (
               <View className="flex-1 items-center justify-center">
                 <View className="animate-spin">
                   <Icon as={Loader2} size={32} />
@@ -289,7 +293,7 @@ export default function CreateItineraryStep5() {
               </View>
             )}
 
-            {!isLoadingDummy && (
+            {!(isLoadingNext && recommendationRound > 0) && (
               <ScrollView
                 className="flex-1 px-6 py-4"
                 showsVerticalScrollIndicator={false}
