@@ -55,6 +55,7 @@ export default function CreateItineraryStep5() {
   const [hideModal, setHideModal] = React.useState(params.hideModal === 'true');
   const [modalSnapPoint, setModalSnapPoint] = React.useState<number | undefined>(undefined);
   const [anchorSelectedNames, setAnchorSelectedNames] = React.useState<Set<string>>(new Set());
+  const [allSelectedNames, setAllSelectedNames] = React.useState<Set<string>>(new Set());
 
   const state = typeof params.state === 'string' ? params.state : '';
   const city = typeof params.city === 'string' ? params.city : '';
@@ -93,6 +94,9 @@ export default function CreateItineraryStep5() {
         round: index,
       }))
     );
+    const allNames = new Set(sorted.flatMap((pin) => pin.place_names));
+    setAllSelectedNames(allNames);
+    setShownNames(Array.from(allNames));
     setSelectedPlaces(new Set(sorted[0].place_names));
     setRecommendationRound(0);
   }, [existingPinsData]);
@@ -134,16 +138,15 @@ export default function CreateItineraryStep5() {
   const places = useMemo(() => {
     if (recommendationRound === 0) return initialPlaces;
 
-    const anchorNames = new Set(anchorPlaces.map((p) => p.name));
     const nextNames = new Set(nextPlacesData.map((p) => p.name));
 
     const candidates = [
-      ...nextPlacesData.filter((p) => !anchorNames.has(p.name)),
-      ...initialPlaces.filter((p) => !anchorNames.has(p.name) && !nextNames.has(p.name)),
+      ...nextPlacesData.filter((p) => !allSelectedNames.has(p.name)),
+      ...initialPlaces.filter((p) => !allSelectedNames.has(p.name) && !nextNames.has(p.name)),
     ];
 
     return candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  }, [recommendationRound, initialPlaces, nextPlacesData, anchorPlaces]);
+  }, [recommendationRound, initialPlaces, nextPlacesData, allSelectedNames]);
   const isLoading = isLoadingInitial || (isExistingItinerary && isLoadingExistingPins);
   const error = initialError || nextError;
 
@@ -214,6 +217,7 @@ const handleAddPlacesToCurrentPin = async () => {
       updated[activePinIndex] = { ...updated[activePinIndex], placeNames: new Set(selectedPlaces) };
       return updated;
     });
+    setAllSelectedNames((prev) => new Set([...prev, ...selectedPlaces]));
     setSelectedPlaces(new Set());
     setAnchorSelectedNames(new Set());
     setHideModal(true);
