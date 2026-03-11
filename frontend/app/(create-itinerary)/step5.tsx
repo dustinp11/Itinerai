@@ -339,7 +339,7 @@ const handleAddPlacesToCurrentPin = async () => {
           defaultSnapPoint={0.8}
           targetSnapPoint={modalSnapPoint}
           visible={!hideModal}>
-          <View className="flex-1">
+          <View className="flex-1 bg-background">
             <View className="px-6 pt-4">
               <Text className="text-2xl font-bold">Recommendations in {selectedCity}</Text>
             </View>
@@ -406,7 +406,7 @@ const handleAddPlacesToCurrentPin = async () => {
 
             {!(isLoadingNext && recommendationRound > 0) && (
               <ScrollView
-                className="flex-1 px-6 py-4"
+                className="flex-1 bg-background px-6 py-4"
                 showsVerticalScrollIndicator={false}
                 contentContainerClassName="pb-24">
                 <View className="gap-4">
@@ -436,7 +436,7 @@ const handleAddPlacesToCurrentPin = async () => {
           </View>
 
           {selectedPlaces.size > 0 && activePinIndex !== -1 && (
-            <View className="absolute bottom-0 left-0 right-0 items-center bg-white px-6 pb-6 pt-4 shadow-2xl shadow-black/20">
+            <View className="absolute bottom-0 left-0 right-0 items-center bg-background px-6 pb-6 pt-4 border-t border-border">
               <Button className="w-[95%] shadow-md" size="lg" onPress={handleAddPlacesToCurrentPin}>
                 <Text>Add ({selectedPlaces.size}) Places</Text>
                 <Icon as={ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
