@@ -72,9 +72,10 @@ export function FakeMap({ pins, onPinPress, onAddNewPress, centerOnLastPin, onBa
       <View className="flex-row items-center justify-between px-6 pt-4">
         <Pressable
           onPress={onBack}
-          className="flex-row items-center gap-1.5 rounded-lg bg-white px-3 py-2">
+          className="flex-row items-center gap-1.5 rounded-lg bg-background px-3 py-2 border border-border"
+        >
           <Icon as={ArrowLeftIcon} className="size-4 text-foreground" />
-          <Text className="text-sm font-medium">Back</Text>
+          <Text className="text-sm font-medium text-foreground">Back</Text>
         </Pressable>
 
         <Button
