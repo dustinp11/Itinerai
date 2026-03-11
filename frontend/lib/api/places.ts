@@ -3,19 +3,15 @@ import { api } from './client';
 export type PlacesPayload = {
   rating: number;
   ratingCount: number;
-  priceLevel: number | null;
+  priceLevel: number;
   name: string;
   openNow: boolean;
   address: string;
   score: number;
-  tags?: string[];
-  types?: string[];
-  recommended?: boolean;
-  recommendedReason?: string;
+  tag?: string;
   image_url?: string;
   latitude?: number;
   longitude?: number;
-  distanceKm?: number | null;
 };
 
 export async function getNextPlaces(args: {
@@ -63,7 +59,7 @@ export async function getDummyPlaces(round: number): Promise<{ places: PlacesPay
         priceLevel: 2,
         openNow: true,
         score: 0.95,
-        tags: ['Cafe'],
+        tag: 'Cafe',
         image_url: undefined,
       },
       {
@@ -74,7 +70,7 @@ export async function getDummyPlaces(round: number): Promise<{ places: PlacesPay
         priceLevel: 3,
         openNow: true,
         score: 0.92,
-        tags: ['Restaurant'],
+        tag: 'Restaurant',
         image_url: undefined,
       },
       {
@@ -85,7 +81,7 @@ export async function getDummyPlaces(round: number): Promise<{ places: PlacesPay
         priceLevel: 1,
         openNow: true,
         score: 0.88,
-        tags: ['Museum'],
+        tag: 'Museum',
         image_url: undefined,
       },
       {
@@ -96,7 +92,7 @@ export async function getDummyPlaces(round: number): Promise<{ places: PlacesPay
         priceLevel: 2,
         openNow: true,
         score: 0.90,
-        tags: ['Bar'],
+        tag: 'Bar',
         image_url: undefined,
       },
     ],

@@ -1,24 +1,6 @@
 import requests
-import math
 import json
-import os
-
-# Reverse lookup: google_place_type -> category name
-# e.g. "italian_restaurant" -> "Restaurants"
-_TYPE_TO_CATEGORY_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'frontend', 'assets', 'place_type_to_category.json'
-)
-with open(_TYPE_TO_CATEGORY_PATH) as _f:
-    TYPE_TO_CATEGORY: dict[str, str] = json.load(_f)
-
-
-def get_place_category(types: list[str]) -> str | None:
-    """Return the first matching category for a list of Google place types."""
-    for t in types:
-        category = TYPE_TO_CATEGORY.get(t)
-        if category:
-            return category
-    return None
+import math
 
 
 def get_distance(start, dest):
@@ -30,16 +12,6 @@ def get_distance(start, dest):
     return math.sqrt((lat2 - lat1) ** 2 + (lng2 - lng1) ** 2)
 
 
-def haversine_distance(lat1, lng1, lat2, lng2):
-    """Compute great-circle distance in meters between two lat/lng points."""
-    R = 6_371_000
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lng2 - lng1)
-    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-
 def bayesian_avg(rating, num_ratings):
     m = 50 # arbitrary choice for minimum ratings, push higher for
     C = 4.0  # prior mean rating, could be global average
@@ -49,30 +21,18 @@ def bayesian_avg(rating, num_ratings):
 
 def compute_weighted_score(bscore, price, budget, start=None, end=None, distance=None):
     """
-    Computes weighted score for a place in [0, 1].
-    bscore (bayesian avg) is normalized to [0, 1] by dividing by max rating of 5.
-    budget=None means no budget signal (activity-only results scored purely on rating).
-    If start/end/distance are not provided, distance is excluded.
+    Computes weighted score for a place.
+    If start/end/distance are not provided, distance is excluded and weights shift to bscore and budget.
     """
-    rating = min(bscore / 5.0, 1.0)
-    has_distance = start and end and distance
-    has_budget = budget is not None
+    price = price or 1
+    budget_match = 1 if price <= budget else 0
 
-    if has_distance:
+    if start and end and distance:
         dist = get_distance(start, end)
         distance_match = 1 if dist <= distance else 0
-        if has_budget:
-            price = price or 1
-            budget_match = 1 if price <= budget else 0
-            return 0.4 * rating + 0.2 * budget_match + 0.4 * distance_match
-        return 0.5 * rating + 0.5 * distance_match
+        return 0.4 * bscore + 0.2 * budget_match + 0.4 * distance_match
 
-    if has_budget:
-        price = price or 1
-        budget_match = 1 if price <= budget else 0
-        return 0.6 * rating + 0.4 * budget_match
-
-    return rating
+    return 0.6 * bscore + 0.4 * budget_match
 
 
 def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
@@ -98,7 +58,6 @@ def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
             image_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxWidthPx=400&key={api_key}"
 
     location = place.get("location", {})
-    types = place.get("types", [])
 
     return {
         "rating": rating,
@@ -109,15 +68,13 @@ def extract_place_info(tag, api_key, place, budget, start=None, distance=None):
         "address": place.get("formattedAddress"),
         "score": weighted_score,
         "image_url": image_url,
-        "tags": [tag] if tag else [],
-        "types": types,
-        "category": get_place_category(types),
+        "tag": tag,
         "latitude": location.get("latitude"),
         "longitude": location.get("longitude"),
     }
 
 
-def google_query(api_key, query, budget, tag=None, start=None, distance=None, location_bias=None, included_type=None, max_results=None):
+def google_query(api_key, query, budget, tag=None, start=None, distance=None, location_bias=None):
     """Call v2 searchText, extract and score places, return sorted by weighted_score."""
     headers = {
         "Content-Type": "application/json",
@@ -130,15 +87,10 @@ def google_query(api_key, query, budget, tag=None, start=None, distance=None, lo
             "places.userRatingCount,"
             "places.regularOpeningHours,"
             "places.location,"
-            "places.photos,"
-            "places.types"
+            "places.photos"
         ),
     }
     body = {"textQuery": query}
-    if max_results is not None:
-        body["maxResultCount"] = max_results
-    if included_type:
-        body["includedType"] = included_type
     if location_bias:
         body["locationBias"] = {
             "circle": {

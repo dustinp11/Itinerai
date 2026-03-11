@@ -1,12 +1,6 @@
 import { TransportItem } from '@/components/onboarding/transport-item';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -16,15 +10,15 @@ import {
   ArrowRightIcon,
   BusIcon,
   CarIcon,
+  ChevronDownIcon,
   FootprintsIcon,
-  Loader2,
   PlaneIcon,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { savePreferences } from '@/lib/api/preferences';
+import { savePreferences } from "@/lib/api/preferences";
 import { queryClient } from '@/lib/query-provider';
 
 const DISTANCE_OPTIONS = ['5 miles', '10 miles', '25 miles', '50 miles', '100 miles', '250+ miles'];
@@ -42,7 +36,7 @@ const TRANSPORT_MODES: TransportMode[] = [
   { key: 'plane', label: 'Plane', icon: PlaneIcon },
 ];
 
-export default function CreateItineraryStep4() {
+export default function OnboardingStep3() {
   const { activities, budget, country, state, city } = useLocalSearchParams<{
     activities: string;
     budget: string;
@@ -54,7 +48,6 @@ export default function CreateItineraryStep4() {
   const { getToken } = useAuth();
   const [distance, setDistance] = React.useState<string | null>(null);
   const [rankedTransport, setRankedTransport] = React.useState<string[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
 
   function toggleTransport(key: string) {
     setRankedTransport((prev) => {
@@ -79,8 +72,6 @@ export default function CreateItineraryStep4() {
   }
 
   async function onContinue() {
-    setIsLoading(true);
-
     if (!user) return;
 
     const prefs = {
@@ -112,27 +103,26 @@ export default function CreateItineraryStep4() {
       queryClient.invalidateQueries({ queryKey: ['places'] });
 
       router.replace({
-        pathname: '/(create-itinerary)/step5',
+        pathname: '/(create-itinerary)/step2',
         params: { country, state, city },
       });
     } catch (err) {
-      console.error('Failed to save preferences:', err);
-      setTimeout(() => setIsLoading(false), 100);
+      console.error("Failed to save onboarding preferences:", err);
     }
   }
+
 
   const isValid = distance && rankedTransport.length > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 px-6 pt-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1.5 self-start">
+        <Pressable onPress={() => router.back()} className="flex-row items-center gap-1.5 self-start">
           <Icon as={ArrowLeftIcon} className="size-4 text-foreground" />
           <Text className="text-sm font-medium">Back</Text>
         </Pressable>
 
+        {/* Travel distance section */}
         <View className="mt-10 gap-2">
           <Text className="text-2xl font-bold">How much are you willing to travel?</Text>
           <Text className="text-sm text-muted-foreground">
@@ -143,11 +133,15 @@ export default function CreateItineraryStep4() {
         <View className="mt-6">
           <Select value={getCurrentDistanceOption()} onValueChange={handleDistanceChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Select distance (miles)" />
-            </SelectTrigger>
+              <SelectValue placeholder='Select distance (miles)' />
+              </SelectTrigger>
             <SelectContent className="w-[88%]">
               {DISTANCE_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option} label={option}>
+                <SelectItem
+                  key={option}
+                  value={option}
+                  label={option}
+                >
                   <Text>{option}</Text>
                 </SelectItem>
               ))}
@@ -155,8 +149,11 @@ export default function CreateItineraryStep4() {
           </Select>
         </View>
 
+        {/* Transportation section */}
         <View className="mt-10 gap-2">
-          <Text className="text-xl font-bold">What's your preferred modes of transportation?</Text>
+          <Text className="text-xl font-bold">
+            What's your preferred modes of transportation?
+          </Text>
           <Text className="text-sm text-muted-foreground">Rank in order of preference.</Text>
         </View>
 
@@ -174,8 +171,9 @@ export default function CreateItineraryStep4() {
       </View>
 
       <View className="px-6 pb-6">
-        <Button className="w-full" onPress={onContinue} disabled={!isValid || isLoading}>
+        <Button className="w-full" onPress={onContinue} disabled={!isValid}>
           <Text>Continue</Text>
+          <Icon as={ArrowRightIcon} className="ml-1 size-4 text-primary-foreground" />
         </Button>
       </View>
     </SafeAreaView>

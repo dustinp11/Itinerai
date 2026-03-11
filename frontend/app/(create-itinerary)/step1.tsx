@@ -1,13 +1,12 @@
 import * as React from 'react';
-import { Alert, ScrollView, View, Modal, Pressable } from 'react-native';
+import { Alert, StyleSheet, ScrollView, View, Modal, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TextInput } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Icon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
-import { ArrowLeftIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { ArrowLeftIcon, Loader2 } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -18,8 +17,6 @@ type StatesAndCitiesMap = Record<string, string[]>;
 const US_MAP = USStatesAndCities as unknown as StatesAndCitiesMap;
 
 const COUNTRIES = [{ code: 'US' as const, name: 'United States' }];
-
-const PICKER_ITEM_COLOR = { light: 'hsl(0, 0%, 3.9%)', dark: 'hsl(0, 0%, 98%)' };
 
 function WheelPickerModal({
   visible,
@@ -39,9 +36,8 @@ function WheelPickerModal({
   searchPlaceholder?: string;
 }) {
   const [query, setQuery] = React.useState('');
-  const { colorScheme } = useColorScheme();
-  const pickerItemColor = colorScheme === 'dark' ? PICKER_ITEM_COLOR.dark : PICKER_ITEM_COLOR.light;
 
+  // Reset search when opening/closing
   React.useEffect(() => {
     if (!visible) setQuery('');
   }, [visible]);
@@ -52,6 +48,7 @@ function WheelPickerModal({
     return options.filter((opt) => opt.toLowerCase().includes(q));
   }, [options, query]);
 
+  // Ensure the selected value exists in the filtered list; if not, pick the first.
   React.useEffect(() => {
     if (!visible) return;
     if (filteredOptions.length === 0) return;
@@ -59,7 +56,7 @@ function WheelPickerModal({
       onChange(filteredOptions[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, query, options]);
+  }, [visible, query, options]); // intentionally tied to query/options changes
 
   const pickerValue =
     filteredOptions.length > 0
@@ -70,41 +67,42 @@ function WheelPickerModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0)' }} onPress={onClose} />
+      {/* Dim background */}
+      <Pressable style={wheelStyles.backdrop} onPress={onClose} />
 
+      {/* Bottom sheet */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={2}>
-        <SafeAreaView
-          className="bg-background"
-          style={{ borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' }}
-          edges={['bottom', 'left', 'right']}>
-
-          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+        <SafeAreaView style={wheelStyles.sheet} edges={['bottom', 'left', 'right']}>
+          <View style={wheelStyles.header}>
             <View style={{ width: 56 }} />
-            <Text className="text-base font-bold">{title}</Text>
-            <Pressable onPress={onClose} hitSlop={12} className="px-2 py-1.5">
-              <Text className="text-base font-semibold">Done</Text>
+            <Text style={wheelStyles.title}>{title}</Text>
+            <Pressable onPress={onClose} hitSlop={12} style={wheelStyles.doneBtn}>
+              <Text style={wheelStyles.doneText}>Done</Text>
             </Pressable>
           </View>
 
-          <View className="px-4 pb-2 pt-3">
-            <Input
+          {/* ✅ Search bar */}
+          <View style={wheelStyles.searchWrap}>
+            <TextInput
               value={query}
               onChangeText={setQuery}
               placeholder={searchPlaceholder ?? 'Search...'}
               autoCapitalize="none"
               autoCorrect={false}
               clearButtonMode="while-editing"
+              style={wheelStyles.searchInput}
             />
           </View>
 
+          {/* Wheel */}
           <Picker
             selectedValue={pickerValue}
             onValueChange={(v) => onChange(String(v))}
             enabled={filteredOptions.length > 0}>
             {(filteredOptions.length ? filteredOptions : ['No matches']).map((opt) => (
-              <Picker.Item key={opt} label={opt} value={opt} color={pickerItemColor} />
+              <Picker.Item key={opt} label={opt} value={opt} />
             ))}
           </Picker>
         </SafeAreaView>
@@ -115,8 +113,6 @@ function WheelPickerModal({
 
 export default function CreateItineraryStep1() {
   const [countryCode, setCountryCode] = React.useState<'US'>('US');
-  const { colorScheme } = useColorScheme();
-  const pickerItemColor = colorScheme === 'dark' ? PICKER_ITEM_COLOR.dark : PICKER_ITEM_COLOR.light;
 
   const stateNames = React.useMemo(() => Object.keys(US_MAP).sort(), []);
 
@@ -137,11 +133,13 @@ export default function CreateItineraryStep1() {
     return firstCities?.[0] ?? '';
   });
 
+  // When state changes, reset city to first valid option
   React.useEffect(() => {
     const nextCities = (US_MAP[stateName] ?? []).slice().sort();
     setCityName(nextCities[0] ?? '');
   }, [stateName]);
 
+  // Wheel modal controls
   const [stateWheelOpen, setStateWheelOpen] = React.useState(false);
   const [cityWheelOpen, setCityWheelOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -165,12 +163,11 @@ export default function CreateItineraryStep1() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView
-        className="flex-1 bg-background"
-        contentContainerStyle={{ padding: 16, gap: 10 }}
+        style={styles.container}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-
         <View style={{ marginBottom: 8 }}>
           <Pressable
             onPress={() => (router.canGoBack?.() ? router.back() : router.replace('/'))}
@@ -179,34 +176,29 @@ export default function CreateItineraryStep1() {
             <Text className="text-sm font-medium">Back</Text>
           </Pressable>
         </View>
-
-        <Text className="text-2xl font-bold text-foreground" style={{ marginBottom: 2 }}>
-          Start your itinerary
-        </Text>
-        <Text className="text-muted-foreground" style={{ marginBottom: 12 }}>
-          Choose a location. We'll recommend places and help you build a route step-by-step.
+        <Text style={styles.h1}>Start your itinerary</Text>
+        <Text style={styles.sub}>
+          Choose a location. We’ll recommend places and help you build a route step-by-step.
         </Text>
 
-        <Text className="text-xs text-muted-foreground">Country</Text>
-        <View
-          className="border border-border rounded-xl overflow-hidden"
-          style={{ height: 56, justifyContent: 'center' }}>
+        {/* Country (keep as picker since it's just US now) */}
+        <Text style={styles.label}>Country</Text>
+        <View style={styles.pickerBox}>
           <Picker
-            style={{ height: 56, width: '100%' }}
-            itemStyle={{ height: 56, fontSize: 16 }}
+            style={styles.picker}
+            itemStyle={styles.pickerItem}
             selectedValue={countryCode}
             onValueChange={(val) => setCountryCode(val)}>
             {COUNTRIES.map((c) => (
-              <Picker.Item key={c.code} label={c.name} value={c.code} color={pickerItemColor} />
+              <Picker.Item key={c.code} label={c.name} value={c.code} />
             ))}
           </Picker>
         </View>
 
-        <Text className="text-xs text-muted-foreground">State</Text>
-        <Pressable
-          className="border border-border rounded-xl bg-background px-3 py-3.5 justify-center"
-          onPress={() => setStateWheelOpen(true)}>
-          <Text className="text-base font-medium text-foreground">{stateName || 'Select a state'}</Text>
+        {/* State (tap field -> wheel modal) */}
+        <Text style={styles.label}>State</Text>
+        <Pressable style={styles.selectBox} onPress={() => setStateWheelOpen(true)}>
+          <Text style={styles.selectText}>{stateName || 'Select a state'}</Text>
         </Pressable>
 
         <WheelPickerModal
@@ -219,12 +211,13 @@ export default function CreateItineraryStep1() {
           searchPlaceholder="Search state..."
         />
 
-        <Text className="text-xs text-muted-foreground">City</Text>
+        {/* City (tap field -> wheel modal) */}
+        <Text style={styles.label}>City</Text>
         <Pressable
-          className={`border border-border rounded-xl bg-background px-3 py-3.5 justify-center${citiesForState.length === 0 ? ' opacity-60' : ''}`}
+          style={[styles.selectBox, citiesForState.length === 0 && styles.selectBoxDisabled]}
           onPress={() => setCityWheelOpen(true)}
           disabled={citiesForState.length === 0}>
-          <Text className="text-base font-medium text-foreground">
+          <Text style={styles.selectText}>
             {cityName || (citiesForState.length ? 'Select a city' : 'No cities available')}
           </Text>
         </Pressable>
@@ -253,3 +246,78 @@ export default function CreateItineraryStep1() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#fff' },
+
+  container: { flex: 1, backgroundColor: '#fff' },
+  content: { padding: 16, gap: 10 },
+
+  h1: { fontSize: 24, fontWeight: '700', marginBottom: 2 },
+  sub: { color: '#555', marginBottom: 12 },
+  label: { fontSize: 12, color: '#444' },
+  topRow: { paddingTop: 6, paddingBottom: 6 },
+
+  // Country picker (still inline)
+  pickerBox: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 56,
+    justifyContent: 'center',
+  },
+  picker: { height: 56, width: '100%' },
+  pickerItem: { height: 56, fontSize: 16 },
+
+  // Tap-to-open fields for state/city
+  selectBox: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  selectBoxDisabled: { opacity: 0.6 },
+  selectText: {
+    fontSize: 16,
+    color: '#111',
+    fontWeight: '500',
+  },
+});
+
+const wheelStyles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0)' },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: 'hidden',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: { fontSize: 16, fontWeight: '700' },
+  doneBtn: { paddingHorizontal: 8, paddingVertical: 6 },
+  doneText: { fontSize: 16, fontWeight: '600' },
+  searchWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+});
