@@ -10,7 +10,7 @@ import requests
 from preferences import Preference, PreferenceStore
 from pins import Pin, PinStore
 from itineraries import Itinerary, ItineraryStore
-from place_utils import google_query, haversine_distance, bayesian_avg
+from place_utils import google_query
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '', '.env'))
 
@@ -69,31 +69,6 @@ TRANSPORT_MODE_MAP = {
 }
 
 
-def merge_places(places):
-    """Deduplicate places by name, merging their tags lists."""
-    seen = {}
-    for place in places:
-        name = place["name"]
-        if name in seen:
-            existing_tags = seen[name].get("tags", [])
-            new_tags = place.get("tags", [])
-            merged = list(dict.fromkeys(existing_tags + new_tags))
-            seen[name] = {**seen[name], "tags": merged}
-        else:
-            seen[name] = place
-    return list(seen.values())
-
-
-BUDGET_SIGNAL_QUERIES = {
-    1: "cheap affordable",
-    2: "mid-range",
-    3: "upscale nice",
-    4: "luxury premium",
-}
-
-PRICE_LABELS = {0: "free", 1: "budget-friendly", 2: "moderate", 3: "upscale", 4: "luxury"}
-
-
 def search_places(activities, location, budget, clerk_user_id=None):
     prefs = {}
     if clerk_user_id:
@@ -105,8 +80,6 @@ def search_places(activities, location, budget, clerk_user_id=None):
         query = build_query(activity, location)
         results = google_query(API_KEY, query, budget, tag=activity, distance=distance)
         all_places.extend(results)
-
-    all_places = merge_places(all_places)
     return sorted(all_places, key=lambda x: x["score"], reverse=True)
 
 
@@ -137,13 +110,6 @@ def search():
     return jsonify(places)
 
 
-# Place types that are too generic to use as meaningful query signals
-GENERIC_TYPES = {
-    "point_of_interest", "establishment", "food", "store",
-    "health", "finance", "place_of_worship",
-}
-
-
 @app.route("/next-places", methods=["POST"])
 def next_places():
     data = request.get_json(silent=True) or {}
@@ -169,115 +135,24 @@ def next_places():
 
     centroid_lat = sum(lat for lat, _ in coords) / len(coords)
     centroid_lng = sum(lng for _, lng in coords) / len(coords)
+    location_bias = {"lat": centroid_lat, "lng": centroid_lng, "radius": 5000.0}
 
-    # --- Signal extraction (Phase 1) ---
+    activities = list({p.get("tag") for p in selected_places if p.get("tag")})
+    if not activities:
+        activities = prefs.get("activities", [])
 
-    # 1. Type frequency — count specific Google place types across all selections
-    type_freq = {}
-    for p in selected_places:
-        for t in (p.get("types") or []):
-            if t not in GENERIC_TYPES:
-                type_freq[t] = type_freq.get(t, 0) + 1
-
-    # Top 2 types by frequency; these are valid Google place type strings
-    google_types = sorted(type_freq, key=lambda t: type_freq[t], reverse=True)[:2]
-
-    # Fallback: use activity tags, then user preferences
-    if not google_types:
-        google_types = list({
-            tag
-            for p in selected_places
-            for tag in (p.get("tags") or ([p.get("tag")] if p.get("tag") else []))
-        }) or prefs.get("activities", [])
-
-    if not google_types:
+    if not activities:
         return jsonify({"error": "no activities could be determined from selections or preferences"}), 400
 
-    # 2. Dynamic radius — tight cluster (<1500 m spread) vs spread out
-    max_spread = max(
-        haversine_distance(centroid_lat, centroid_lng, lat, lng)
-        for lat, lng in coords
-    )
-    dynamic_radius = 1500.0 if max_spread < 1500 else 5000.0
-
-    # 3. Average price level for post-fetch filtering
-    price_levels = [p["priceLevel"] for p in selected_places if p.get("priceLevel") is not None]
-    avg_price = round(sum(price_levels) / len(price_levels)) if price_levels else None
-
-    location_bias = {"lat": centroid_lat, "lng": centroid_lng, "radius": dynamic_radius}
     distance = parse_distance_miles(prefs.get("travelDistance"))
 
-    # Build a human-readable reason from the active signals, shared across all
-    # results in a given type batch.
-    def build_reason(type_query):
-        readable = type_query.replace("_", " ").title()
-        return [f"Matches your interest in {readable}s"]
-
-    # --- Fetch ---
-    # Use includedType only for types sourced from the Google taxonomy (type_freq),
-    # not for activity-tag fallbacks.
     all_places = []
-    for type_query in google_types:
-        query = build_query(type_query, city)
-        included_type = type_query if type_query in type_freq else None
-        results = google_query(
-            API_KEY, query, None,
-            tag=type_query,
-            distance=distance,
-            location_bias=location_bias,
-            included_type=included_type,
-            max_results=5,
-        )
-        reason = build_reason(type_query)
-        for place in results:
-            place["recommended"] = True
-            place["recommendedReason"] = reason
+    for activity in activities:
+        query = build_query(activity, city)
+        results = google_query(API_KEY, query, budget, tag=activity, distance=distance, location_bias=location_bias)
         all_places.extend(results)
 
-    # Budget signal: if selected places reveal a cost preference, fetch more places at
-    # that price point and post-filter to match. Skipped entirely when avg_price is None
-    # (i.e. none of the selected places have price data — null is not free).
-    if avg_price is not None:
-        budget_prefix = BUDGET_SIGNAL_QUERIES.get(avg_price)
-        if budget_prefix:
-            budget_q = f"{budget_prefix} places near {city}"
-            budget_results = google_query(
-                API_KEY, budget_q, budget,
-                tag=None,
-                distance=distance,
-                location_bias=location_bias,
-                max_results=5,
-            )
-            for place in budget_results:
-                place["recommended"] = True
-                place["recommendedReason"] = f"Matches your {PRICE_LABELS.get(avg_price, 'price')} spending pattern"
-            all_places.extend(budget_results)
-
-    all_places = merge_places(all_places)
     all_places = [p for p in all_places if p["name"] not in exclude_names]
-
-    # Post-filter: keep places within ±1 of the inferred price level.
-    # Places with no price data pass through — null is not zero.
-    if avg_price is not None:
-        all_places = [
-            p for p in all_places
-            if p.get("priceLevel") is None or abs(p["priceLevel"] - avg_price) <= 1
-        ]
-
-    # Re-rank: combined normalized rating + proximity to centroid (60/40).
-    for place in all_places:
-        lat, lng = place.get("latitude"), place.get("longitude")
-        bscore = bayesian_avg(place.get("rating") or 0, place.get("ratingCount") or 0)
-        if lat is not None and lng is not None:
-            dist_km = haversine_distance(centroid_lat, centroid_lng, lat, lng) / 1000
-            proximity = 1 / (1 + dist_km / 10)
-            rating_norm = min(bscore / 5.0, 1.0)
-            place["score"] = round(0.6 * rating_norm + 0.4 * proximity, 4)
-            place["distanceKm"] = round(dist_km, 2)
-        else:
-            place["score"] = round(min(bscore / 5.0, 1.0), 4)
-            place["distanceKm"] = None
-
     all_places = sorted(all_places, key=lambda x: x["score"], reverse=True)
 
     return jsonify(all_places)
