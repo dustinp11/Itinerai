@@ -5,8 +5,8 @@ import { PlaceCard } from '@/components/create-itinerary/place-card';
 import { FakeMap } from '@/components/create-itinerary/fake-map';
 import { ResizableModal } from '@/components/create-itinerary/resizable-modal';
 import { getPlaces, getNextPlaces, PlacesPayload } from '@/lib/api/places';
-import { savePin, getPin } from '@/lib/api/pins';
-import { useQuery } from '@tanstack/react-query';
+import { savePin, getPin, getPinsByItinerary } from '@/lib/api/pins';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import { ArrowRightIcon, Loader2 } from 'lucide-react-native';
@@ -14,20 +14,35 @@ import * as React from 'react';
 import { Pressable, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import StateAbbrev from '@/assets/us_state_abbrev.json';
 
+function formatType(type: string) {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+
 type Pin = {
   id: string;
+  serverId?: string; // server-generated UUID, set after first save
   placeNames: Set<string>;
   isActive: boolean;
   round: number;
 };
 
 const SNAP_POINTS = [0.2, 0.8, 0.95];
+const RECOMMENDED_TAG = '__recommended__';
 
 export default function CreateItineraryStep5() {
+  const params = useLocalSearchParams<{
+    state?: string;
+    city?: string;
+    selectedCity?: string;
+    itineraryId?: string;
+    hideModal?: string;
+  }>();
+
   const [pins, setPins] = React.useState<Pin[]>([
     { id: 'pin-0', placeNames: new Set<string>(), isActive: true, round: 0 },
   ]);
@@ -37,22 +52,54 @@ export default function CreateItineraryStep5() {
   const [recommendationRound, setRecommendationRound] = React.useState(0);
   const [anchorPlaces, setAnchorPlaces] = React.useState<PlacesPayload[]>([]);
   const [shownNames, setShownNames] = React.useState<string[]>([]);
-  const [hideModal, setHideModal] = React.useState(false);
+  const [hideModal, setHideModal] = React.useState(params.hideModal === 'true');
   const [modalSnapPoint, setModalSnapPoint] = React.useState<number | undefined>(undefined);
-
-  const params = useLocalSearchParams<{
-    state?: string;
-    city?: string;
-  }>();
+  const [anchorSelectedNames, setAnchorSelectedNames] = React.useState<Set<string>>(new Set());
+  const [allSelectedNames, setAllSelectedNames] = React.useState<Set<string>>(new Set());
 
   const state = typeof params.state === 'string' ? params.state : '';
   const city = typeof params.city === 'string' ? params.city : '';
   const stateAbbrev = StateAbbrev[state as keyof typeof StateAbbrev] ?? state;
 
-  const selectedCity = `${city}, ${stateAbbrev}`;
+  const selectedCity = typeof params.selectedCity === 'string'
+    ? params.selectedCity
+    : `${city}, ${stateAbbrev}`;
   const { user } = useUser();
   useAuth(); // available for future authenticated requests
-  const itineraryId = useRef(`itinerary-${Date.now()}`).current;
+  const queryClient = useQueryClient();
+  const isExistingItinerary = typeof params.itineraryId === 'string';
+  const itineraryId = useRef(
+    typeof params.itineraryId === 'string' ? params.itineraryId : `itinerary-${Date.now()}`
+  ).current;
+
+  const {
+    data: existingPinsData,
+    isLoading: isLoadingExistingPins,
+  } = useQuery({
+    queryKey: ['pins', itineraryId, user?.id],
+    queryFn: () => getPinsByItinerary({ clerkUserId: user!.id, itineraryId }).then((r) => r.pins),
+    enabled: isExistingItinerary && !!user?.id,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (!existingPinsData || existingPinsData.length === 0) return;
+    const sorted = [...existingPinsData].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    setPins(
+      sorted.map((pin, index) => ({
+        id: `pin-${index}`,
+        serverId: pin.pin_id,
+        placeNames: new Set(pin.place_names),
+        isActive: index === 0,
+        round: index,
+      }))
+    );
+    const allNames = new Set(sorted.flatMap((pin) => pin.place_names));
+    setAllSelectedNames(allNames);
+    setShownNames(Array.from(allNames));
+    setSelectedPlaces(new Set(sorted[0].place_names));
+    setRecommendationRound(0);
+  }, [existingPinsData]);
 
   const {
     data: initialPlaces = [],
@@ -88,8 +135,19 @@ export default function CreateItineraryStep5() {
     staleTime: Infinity,
   });
 
-  const places = recommendationRound > 0 ? nextPlacesData : initialPlaces;
-  const isLoading = isLoadingInitial;
+  const places = useMemo(() => {
+    if (recommendationRound === 0) return initialPlaces;
+
+    const nextNames = new Set(nextPlacesData.map((p) => p.name));
+
+    const candidates = [
+      ...nextPlacesData.filter((p) => !allSelectedNames.has(p.name)),
+      ...initialPlaces.filter((p) => !allSelectedNames.has(p.name) && !nextNames.has(p.name)),
+    ];
+
+    return candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  }, [recommendationRound, initialPlaces, nextPlacesData, allSelectedNames]);
+  const isLoading = isLoadingInitial || (isExistingItinerary && isLoadingExistingPins);
   const error = initialError || nextError;
 
   const handleTogglePlaceSelection = useCallback((placeName: string) => {
@@ -119,25 +177,38 @@ export default function CreateItineraryStep5() {
   const allUniqueTags = useMemo(() => {
     const tagsSet = new Set<string>();
     places.forEach((place) => {
-      if (place.tag) {
-        tagsSet.add(place.tag);
-      }
+      (place.tags ?? []).forEach((t) => tagsSet.add(t));
     });
     return Array.from(tagsSet).sort();
   }, [places]);
 
+  const hasRecommended = useMemo(() => places.some((p) => p.recommended), [places]);
+
   const filteredPlaces = useMemo(() => {
-    if (selectedTags.size === 0) {
-      return places;
+    let result = selectedTags.size === 0
+      ? places
+      : places.filter((place) =>
+          (selectedTags.has(RECOMMENDED_TAG) && !!place.recommended) ||
+          (place.tags && place.tags.some((t) => selectedTags.has(t)))
+        );
+
+    if (anchorSelectedNames.size > 0) {
+      result = [...result].sort((a, b) => {
+        const aSelected = anchorSelectedNames.has(a.name) ? 0 : 1;
+        const bSelected = anchorSelectedNames.has(b.name) ? 0 : 1;
+        return aSelected - bSelected;
+      });
     }
-    return places.filter((place) => place.tag && selectedTags.has(place.tag));
-  }, [places, selectedTags]);
+
+    return result;
+  }, [places, selectedTags, anchorSelectedNames]);
 
   const activePinIndex = useMemo(() => pins.findIndex((pin) => pin.isActive), [pins]);
 
-  const handleAddPlacesToCurrentPin = async () => {
+const handleAddPlacesToCurrentPin = async () => {
     if (activePinIndex === -1) return;
     const pin = pins[activePinIndex];
+    const localId = pin.id;
     const savedPlaceObjects = places.filter((p) => selectedPlaces.has(p.name));
     setAnchorPlaces(savedPlaceObjects);
     setShownNames((prev) => [...new Set([...prev, ...places.map((p) => p.name)])]);
@@ -146,17 +217,29 @@ export default function CreateItineraryStep5() {
       updated[activePinIndex] = { ...updated[activePinIndex], placeNames: new Set(selectedPlaces) };
       return updated;
     });
+    setAllSelectedNames((prev) => new Set([...prev, ...selectedPlaces]));
     setSelectedPlaces(new Set());
+    setAnchorSelectedNames(new Set());
     setHideModal(true);
 
     if (user?.id) {
-      savePin({
-        pinId: pin.id,
-        clerkUserId: user.id,
-        itineraryId,
-        placeNames: Array.from(selectedPlaces),
-        places: places.filter((p) => selectedPlaces.has(p.name)),
-      }).catch(console.error);
+      try {
+        const { pin: saved } = await savePin({
+          pinId: pin?.serverId, 
+          clerkUserId: user.id,
+          itineraryId,
+          placeNames: Array.from(selectedPlaces),
+          places: places.filter((p) => selectedPlaces.has(p.name)),
+        });
+        setPins((prev) => {
+          const updated = [...prev];
+          const idx = updated.findIndex((p) => p.id === localId);
+          if (idx !== -1) updated[idx] = { ...updated[idx], serverId: saved.pin_id };
+          return updated;
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -168,6 +251,8 @@ export default function CreateItineraryStep5() {
       { id: newPinId, placeNames: new Set<string>(), isActive: true, round: nextRound },
     ]);
     setSelectedPlaces(new Set());
+    setAnchorSelectedNames(new Set());
+    setSelectedTags(new Set());
     setCenterOnLastPin(true);
     setRecommendationRound(nextRound);
     setHideModal(false);
@@ -179,20 +264,32 @@ export default function CreateItineraryStep5() {
     const localPin = pins.find((p) => p.id === pinId);
     setPins((prev) => prev.map((p) => ({ ...p, isActive: p.id === pinId })));
     if (localPin !== undefined) setRecommendationRound(localPin.round);
+    setSelectedTags(new Set());
     setHideModal(false);
     setModalSnapPoint(0.8);
     setTimeout(() => setModalSnapPoint(undefined), 50);
 
     // Try to load saved selections from backend; fall back to local state
-    try {
-      const { pin: saved } = await getPin(pinId);
-      setSelectedPlaces(new Set(saved.place_names));
-    } catch {
-      setSelectedPlaces(new Set(localPin?.placeNames));
+    if (localPin?.serverId) {
+      try {
+        const { pin: saved } = await getPin(localPin.serverId);
+        const names = new Set(saved.place_names);
+        setSelectedPlaces(names);
+        setAnchorSelectedNames(names);
+      } catch {
+        const names = new Set(localPin.placeNames);
+        setSelectedPlaces(names);
+        setAnchorSelectedNames(names);
+      }
+    } else {
+      const names = new Set(localPin?.placeNames);
+      setSelectedPlaces(names);
+      setAnchorSelectedNames(names);
     }
   };
 
   const handleDone = () => {
+    queryClient.invalidateQueries({ queryKey: ['pins', itineraryId, user?.id] });
     router.push({
       pathname: '/(create-itinerary)/summary',
       params: { itineraryId, city: selectedCity },
@@ -247,7 +344,7 @@ export default function CreateItineraryStep5() {
               <Text className="text-2xl font-bold">Recommendations in {selectedCity}</Text>
             </View>
 
-            {allUniqueTags.length > 0 && (
+            {(allUniqueTags.length > 0 || hasRecommended) && (
               <View className="mt-4 border-t border-border pt-2">
                 <ScrollView
                   horizontal
@@ -265,6 +362,20 @@ export default function CreateItineraryStep5() {
                       All
                     </Text>
                   </Pressable>
+                  {hasRecommended && (
+                    <Pressable
+                      onPress={() => handleToggleTag(RECOMMENDED_TAG)}
+                      className={`flex-row items-center gap-1 rounded-full border px-3 py-1.5 ${
+                        selectedTags.has(RECOMMENDED_TAG)
+                          ? 'border-primary bg-primary'
+                          : 'border-border bg-background'
+                      }`}>
+                      <Text
+                        className={`text-sm font-medium ${selectedTags.has(RECOMMENDED_TAG) ? 'text-primary-foreground' : 'text-foreground'}`}>
+                        Recommended
+                      </Text>
+                    </Pressable>
+                  )}
                   {allUniqueTags.map((tag) => (
                     <Pressable
                       key={tag}
@@ -276,7 +387,7 @@ export default function CreateItineraryStep5() {
                       }`}>
                       <Text
                         className={`text-sm font-medium ${selectedTags.has(tag) ? 'text-primary-foreground' : 'text-foreground'}`}>
-                        {tag}
+                        {formatType(tag)}
                       </Text>
                     </Pressable>
                   ))}
@@ -299,18 +410,26 @@ export default function CreateItineraryStep5() {
                 showsVerticalScrollIndicator={false}
                 contentContainerClassName="pb-24">
                 <View className="gap-4">
-                  {filteredPlaces.map((place, index) => (
-                    <PlaceCard
-                      key={`${place.name}-${index}`}
-                      name={place.name}
-                      address={place.address}
-                      priceLevel={place.priceLevel}
-                      onAdd={() => handleTogglePlaceSelection(place.name)}
-                      isAdded={selectedPlaces.has(place.name)}
-                      imageUrl={place.image_url}
-                      tag={place.tag}
-                    />
-                  ))}
+                  {filteredPlaces.map((place, index) => {
+                    return (
+                      <PlaceCard
+                        key={`${place.name}-${index}`}
+                        name={place.name}
+                        address={place.address}
+                        priceLevel={place.priceLevel}
+                        onAdd={() => handleTogglePlaceSelection(place.name)}
+                        isAdded={selectedPlaces.has(place.name)}
+                        imageUrl={place.image_url}
+                        tags={place.tags}
+                        recommended={place.recommended}
+                        recommendedReason={place.recommendedReason}
+                        rating={place.rating}
+                        ratingCount={place.ratingCount}
+                        distanceKm={place.distanceKm ?? undefined}
+                        score={place.score}
+                      />
+                    );
+                  })}
                 </View>
               </ScrollView>
             )}

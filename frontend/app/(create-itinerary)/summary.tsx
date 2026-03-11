@@ -6,7 +6,8 @@ import { saveItinerary } from '@/lib/api/itineraries';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeftIcon, CheckCircle2Icon, Loader2, MapPinIcon } from 'lucide-react-native';
+import { Input } from '@/components/ui/input';
+import { ArrowLeftIcon, CheckCircle2Icon, CheckIcon, Loader2, MapIcon, MapPinIcon, PencilIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, View, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,10 +15,12 @@ import MapView, { Marker } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 
 export default function ItinerarySummary() {
-  const { itineraryId, city } = useLocalSearchParams<{ itineraryId: string; city: string }>();
+  const { itineraryId, city, name } = useLocalSearchParams<{ itineraryId: string; city: string; name?: string }>();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [itineraryName, setItineraryName] = React.useState(name || `Trip to ${city}`);
+  const [isEditing, setIsEditing] = React.useState(false);
 
   const { data: pins = [], isLoading } = useQuery({
     queryKey: ['pins', itineraryId, user?.id],
@@ -43,11 +46,12 @@ export default function ItinerarySummary() {
       await saveItinerary({
         itineraryId,
         clerkUserId: user.id,
-        name: `Trip to ${city}`,
+        name: itineraryName,
         city,
         stopCount: sortedPins.length,
       });
       queryClient.invalidateQueries({ queryKey: ['itineraries', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['pins', itineraryId, user.id] });
       router.replace('/');
     } catch (err) {
       console.error('Failed to save itinerary:', err);
@@ -83,7 +87,29 @@ export default function ItinerarySummary() {
           </Pressable>
 
           <View className="mt-6 gap-1">
-            <Text className="text-3xl font-bold">Itinerary Summary</Text>
+            {isEditing ? (
+              <View className="flex-row items-center gap-2">
+                <Input
+                  value={itineraryName}
+                  onChangeText={setItineraryName}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={() => setIsEditing(false)}
+                  className="flex-1 text-2xl font-bold"
+                  style={{ height: 48 }}
+                />
+                <Button size="icon" onPress={() => setIsEditing(false)}>
+                  <Icon as={CheckIcon} className="size-4 text-primary-foreground" />
+                </Button>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <Text className="text-2xl font-bold">{itineraryName}</Text>
+                <Button size="icon" variant="ghost" onPress={() => setIsEditing(true)}>
+                  <Icon as={PencilIcon} className="size-4 text-foreground" />
+                </Button>
+              </View>
+            )}
             <Text className="text-sm text-muted-foreground">
               {sortedPins.length} {sortedPins.length === 1 ? 'stop' : 'stops'} · {totalPlaces}{' '}
               {totalPlaces === 1 ? 'place' : 'places'}
@@ -142,7 +168,6 @@ export default function ItinerarySummary() {
               </MapView>
             </View>
           )}
-
           {sortedPins.length === 0 ? (
             <View className="flex-1 items-center justify-center py-12">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -165,9 +190,25 @@ export default function ItinerarySummary() {
         </ScrollView>
 
         {sortedPins.length > 0 && (
-          <View className="px-6 pb-6 pt-4">
+          <View className="px-6 pb-6 pt-4 gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full"
+              onPress={() =>
+                router.push({
+                  pathname: '/(create-itinerary)/step5',
+                  params: { selectedCity: city, itineraryId, hideModal: 'true' },
+                })
+              }>
+              <Icon as={MapIcon} className="size-4 text-foreground" />
+              <Text>Edit Places</Text>
+            </Button>
             <Button size="lg" onPress={handleSave} disabled={isSaving} className="w-full">
-              <Icon as={isSaving ? Loader2 : MapPinIcon} className="size-4 text-primary-foreground" />
+              <Icon
+                as={isSaving ? Loader2 : MapPinIcon}
+                className="size-4 text-primary-foreground"
+              />
               <Text>{isSaving ? 'Saving...' : 'Save Itinerary'}</Text>
             </Button>
           </View>
