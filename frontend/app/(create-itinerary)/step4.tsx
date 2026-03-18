@@ -13,11 +13,9 @@ import { useUser, useAuth } from '@clerk/clerk-expo';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeftIcon,
-  ArrowRightIcon,
   BusIcon,
   CarIcon,
   FootprintsIcon,
-  Loader2,
   PlaneIcon,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -109,7 +107,8 @@ export default function CreateItineraryStep4() {
       });
 
       queryClient.invalidateQueries({ queryKey: ['preferences', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['places'] });
+      queryClient.removeQueries({ queryKey: ['places'] });
+      queryClient.removeQueries({ queryKey: ['next-places'] });
 
       router.replace({
         pathname: '/(create-itinerary)/step5',
