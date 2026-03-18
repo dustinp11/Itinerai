@@ -18,6 +18,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import StateAbbrev from '@/assets/us_state_abbrev.json';
 
+function formatType(type: string) {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+
 type Pin = {
   id: string;
   serverId?: string; // server-generated UUID, set after first save
@@ -27,6 +32,7 @@ type Pin = {
 };
 
 const SNAP_POINTS = [0.2, 0.8, 0.95];
+const RECOMMENDED_TAG = '__recommended__';
 
 export default function CreateItineraryStep5() {
   const params = useLocalSearchParams<{
@@ -48,6 +54,8 @@ export default function CreateItineraryStep5() {
   const [shownNames, setShownNames] = React.useState<string[]>([]);
   const [hideModal, setHideModal] = React.useState(params.hideModal === 'true');
   const [modalSnapPoint, setModalSnapPoint] = React.useState<number | undefined>(undefined);
+  const [anchorSelectedNames, setAnchorSelectedNames] = React.useState<Set<string>>(new Set());
+  const [allSelectedNames, setAllSelectedNames] = React.useState<Set<string>>(new Set());
 
   const state = typeof params.state === 'string' ? params.state : '';
   const city = typeof params.city === 'string' ? params.city : '';
@@ -86,6 +94,9 @@ export default function CreateItineraryStep5() {
         round: index,
       }))
     );
+    const allNames = new Set(sorted.flatMap((pin) => pin.place_names));
+    setAllSelectedNames(allNames);
+    setShownNames(Array.from(allNames));
     setSelectedPlaces(new Set(sorted[0].place_names));
     setRecommendationRound(0);
   }, [existingPinsData]);
@@ -124,7 +135,18 @@ export default function CreateItineraryStep5() {
     staleTime: Infinity,
   });
 
-  const places = recommendationRound > 0 ? nextPlacesData : initialPlaces;
+  const places = useMemo(() => {
+    if (recommendationRound === 0) return initialPlaces;
+
+    const nextNames = new Set(nextPlacesData.map((p) => p.name));
+
+    const candidates = [
+      ...nextPlacesData.filter((p) => !allSelectedNames.has(p.name)),
+      ...initialPlaces.filter((p) => !allSelectedNames.has(p.name) && !nextNames.has(p.name)),
+    ];
+
+    return candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  }, [recommendationRound, initialPlaces, nextPlacesData, allSelectedNames]);
   const isLoading = isLoadingInitial || (isExistingItinerary && isLoadingExistingPins);
   const error = initialError || nextError;
 
@@ -155,23 +177,35 @@ export default function CreateItineraryStep5() {
   const allUniqueTags = useMemo(() => {
     const tagsSet = new Set<string>();
     places.forEach((place) => {
-      if (place.tag) {
-        tagsSet.add(place.tag);
-      }
+      (place.tags ?? []).forEach((t) => tagsSet.add(t));
     });
     return Array.from(tagsSet).sort();
   }, [places]);
 
+  const hasRecommended = useMemo(() => places.some((p) => p.recommended), [places]);
+
   const filteredPlaces = useMemo(() => {
-    if (selectedTags.size === 0) {
-      return places;
+    let result = selectedTags.size === 0
+      ? places
+      : places.filter((place) =>
+          (selectedTags.has(RECOMMENDED_TAG) && !!place.recommended) ||
+          (place.tags && place.tags.some((t) => selectedTags.has(t)))
+        );
+
+    if (anchorSelectedNames.size > 0) {
+      result = [...result].sort((a, b) => {
+        const aSelected = anchorSelectedNames.has(a.name) ? 0 : 1;
+        const bSelected = anchorSelectedNames.has(b.name) ? 0 : 1;
+        return aSelected - bSelected;
+      });
     }
-    return places.filter((place) => place.tag && selectedTags.has(place.tag));
-  }, [places, selectedTags]);
+
+    return result;
+  }, [places, selectedTags, anchorSelectedNames]);
 
   const activePinIndex = useMemo(() => pins.findIndex((pin) => pin.isActive), [pins]);
 
-  const handleAddPlacesToCurrentPin = async () => {
+const handleAddPlacesToCurrentPin = async () => {
     if (activePinIndex === -1) return;
     const pin = pins[activePinIndex];
     const localId = pin.id;
@@ -183,7 +217,9 @@ export default function CreateItineraryStep5() {
       updated[activePinIndex] = { ...updated[activePinIndex], placeNames: new Set(selectedPlaces) };
       return updated;
     });
+    setAllSelectedNames((prev) => new Set([...prev, ...selectedPlaces]));
     setSelectedPlaces(new Set());
+    setAnchorSelectedNames(new Set());
     setHideModal(true);
 
     if (user?.id) {
@@ -215,6 +251,8 @@ export default function CreateItineraryStep5() {
       { id: newPinId, placeNames: new Set<string>(), isActive: true, round: nextRound },
     ]);
     setSelectedPlaces(new Set());
+    setAnchorSelectedNames(new Set());
+    setSelectedTags(new Set());
     setCenterOnLastPin(true);
     setRecommendationRound(nextRound);
     setHideModal(false);
@@ -226,6 +264,7 @@ export default function CreateItineraryStep5() {
     const localPin = pins.find((p) => p.id === pinId);
     setPins((prev) => prev.map((p) => ({ ...p, isActive: p.id === pinId })));
     if (localPin !== undefined) setRecommendationRound(localPin.round);
+    setSelectedTags(new Set());
     setHideModal(false);
     setModalSnapPoint(0.8);
     setTimeout(() => setModalSnapPoint(undefined), 50);
@@ -234,12 +273,18 @@ export default function CreateItineraryStep5() {
     if (localPin?.serverId) {
       try {
         const { pin: saved } = await getPin(localPin.serverId);
-        setSelectedPlaces(new Set(saved.place_names));
+        const names = new Set(saved.place_names);
+        setSelectedPlaces(names);
+        setAnchorSelectedNames(names);
       } catch {
-        setSelectedPlaces(new Set(localPin.placeNames));
+        const names = new Set(localPin.placeNames);
+        setSelectedPlaces(names);
+        setAnchorSelectedNames(names);
       }
     } else {
-      setSelectedPlaces(new Set(localPin?.placeNames));
+      const names = new Set(localPin?.placeNames);
+      setSelectedPlaces(names);
+      setAnchorSelectedNames(names);
     }
   };
 
@@ -299,7 +344,7 @@ export default function CreateItineraryStep5() {
               <Text className="text-2xl font-bold">Recommendations in {selectedCity}</Text>
             </View>
 
-            {allUniqueTags.length > 0 && (
+            {(allUniqueTags.length > 0 || hasRecommended) && (
               <View className="mt-4 border-t border-border pt-2">
                 <ScrollView
                   horizontal
@@ -317,6 +362,20 @@ export default function CreateItineraryStep5() {
                       All
                     </Text>
                   </Pressable>
+                  {hasRecommended && (
+                    <Pressable
+                      onPress={() => handleToggleTag(RECOMMENDED_TAG)}
+                      className={`flex-row items-center gap-1 rounded-full border px-3 py-1.5 ${
+                        selectedTags.has(RECOMMENDED_TAG)
+                          ? 'border-primary bg-primary'
+                          : 'border-border bg-background'
+                      }`}>
+                      <Text
+                        className={`text-sm font-medium ${selectedTags.has(RECOMMENDED_TAG) ? 'text-primary-foreground' : 'text-foreground'}`}>
+                        Recommended
+                      </Text>
+                    </Pressable>
+                  )}
                   {allUniqueTags.map((tag) => (
                     <Pressable
                       key={tag}
@@ -328,7 +387,7 @@ export default function CreateItineraryStep5() {
                       }`}>
                       <Text
                         className={`text-sm font-medium ${selectedTags.has(tag) ? 'text-primary-foreground' : 'text-foreground'}`}>
-                        {tag}
+                        {formatType(tag)}
                       </Text>
                     </Pressable>
                   ))}
@@ -351,18 +410,26 @@ export default function CreateItineraryStep5() {
                 showsVerticalScrollIndicator={false}
                 contentContainerClassName="pb-24">
                 <View className="gap-4">
-                  {filteredPlaces.map((place, index) => (
-                    <PlaceCard
-                      key={`${place.name}-${index}`}
-                      name={place.name}
-                      address={place.address}
-                      priceLevel={place.priceLevel}
-                      onAdd={() => handleTogglePlaceSelection(place.name)}
-                      isAdded={selectedPlaces.has(place.name)}
-                      imageUrl={place.image_url}
-                      tag={place.tag}
-                    />
-                  ))}
+                  {filteredPlaces.map((place, index) => {
+                    return (
+                      <PlaceCard
+                        key={`${place.name}-${index}`}
+                        name={place.name}
+                        address={place.address}
+                        priceLevel={place.priceLevel}
+                        onAdd={() => handleTogglePlaceSelection(place.name)}
+                        isAdded={selectedPlaces.has(place.name)}
+                        imageUrl={place.image_url}
+                        tags={place.tags}
+                        recommended={place.recommended}
+                        recommendedReason={place.recommendedReason}
+                        rating={place.rating}
+                        ratingCount={place.ratingCount}
+                        distanceKm={place.distanceKm ?? undefined}
+                        score={place.score}
+                      />
+                    );
+                  })}
                 </View>
               </ScrollView>
             )}
