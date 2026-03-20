@@ -190,6 +190,28 @@ def next_places():
             for tag in (p.get("tags") or ([p.get("tag")] if p.get("tag") else []))
         }) or prefs.get("activities", [])
 
+    # Collect all tags relevant to the user (selected place tags + user preference activities)
+    # Used later to filter recommended places.
+    selected_place_tags = {
+        tag
+        for p in selected_places
+        for tag in (p.get("tags") or ([p.get("tag")] if p.get("tag") else []))
+    }
+    user_activity_tags = set(prefs.get("activities", []))
+    relevant_tags = selected_place_tags | user_activity_tags | set(google_types)
+
+    # Build a mapping from Google place type -> user-facing tag (from the selected places).
+    # e.g. "tourist_attraction" -> "attraction" if the user selected an "attraction"-tagged place
+    # that had type "tourist_attraction". Falls back to the raw type string.
+    type_to_user_tag: dict = {}
+    for p in selected_places:
+        p_tags = p.get("tags") or ([p.get("tag")] if p.get("tag") else [])
+        if not p_tags:
+            continue
+        for t in (p.get("types") or []):
+            if t not in GENERIC_TYPES and t not in type_to_user_tag:
+                type_to_user_tag[t] = p_tags[0]
+
     if not google_types:
         return jsonify({"error": "no activities could be determined from selections or preferences"}), 400
 
@@ -211,7 +233,8 @@ def next_places():
     # results in a given type batch.
     def build_reason(type_query):
         readable = type_query.replace("_", " ").title()
-        return [f"Matches your interest in {readable}s"]
+        plural = readable if readable.lower().endswith("s") else f"{readable}s"
+        return [f"Matches your interest in {plural}"]
 
     # --- Fetch ---
     # Use includedType only for types sourced from the Google taxonomy (type_freq),
@@ -220,15 +243,16 @@ def next_places():
     for type_query in google_types:
         query = build_query(type_query, city)
         included_type = type_query if type_query in type_freq else None
+        user_tag = type_to_user_tag.get(type_query, type_query)
         results = google_query(
             API_KEY, query, None,
-            tag=type_query,
+            tag=user_tag,
             distance=distance,
             location_bias=location_bias,
             included_type=included_type,
             max_results=5,
         )
-        reason = build_reason(type_query)
+        reason = build_reason(user_tag)
         for place in results:
             place["recommended"] = True
             place["recommendedReason"] = reason
@@ -264,7 +288,14 @@ def next_places():
             if p.get("priceLevel") is None or abs(p["priceLevel"] - avg_price) <= 1
         ]
 
+    # Filter recommended places: must share at least one tag with the user's interests.
+    all_places = [
+        p for p in all_places
+        if not p.get("recommended") or bool(set(p.get("tags") or []) & relevant_tags)
+    ]
+
     # Re-rank: combined normalized rating + proximity to centroid (60/40).
+    # Recommended places receive a +0.2 boost so they consistently surface at the top.
     for place in all_places:
         lat, lng = place.get("latitude"), place.get("longitude")
         bscore = bayesian_avg(place.get("rating") or 0, place.get("ratingCount") or 0)
@@ -272,11 +303,15 @@ def next_places():
             dist_km = haversine_distance(centroid_lat, centroid_lng, lat, lng) / 1000
             proximity = 1 / (1 + dist_km / 10)
             rating_norm = min(bscore / 5.0, 1.0)
-            place["score"] = round(0.6 * rating_norm + 0.4 * proximity, 4)
+            base_score = 0.6 * rating_norm + 0.4 * proximity
             place["distanceKm"] = round(dist_km, 2)
         else:
-            place["score"] = round(min(bscore / 5.0, 1.0), 4)
+            base_score = min(bscore / 5.0, 1.0)
             place["distanceKm"] = None
+
+        if place.get("recommended"):
+            base_score = min(base_score + 0.15, 1.0)
+        place["score"] = round(base_score, 4)
 
     all_places = sorted(all_places, key=lambda x: x["score"], reverse=True)
 

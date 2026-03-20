@@ -22,6 +22,16 @@ function formatType(type: string) {
   return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 
 type Pin = {
   id: string;
@@ -135,6 +145,15 @@ export default function CreateItineraryStep5() {
     staleTime: Infinity,
   });
 
+  const centroid = useMemo(() => {
+    const valid = anchorPlaces.filter((p) => p.latitude != null && p.longitude != null);
+    if (valid.length === 0) return null;
+    return {
+      lat: valid.reduce((s, p) => s + p.latitude!, 0) / valid.length,
+      lng: valid.reduce((s, p) => s + p.longitude!, 0) / valid.length,
+    };
+  }, [anchorPlaces]);
+
   const places = useMemo(() => {
     if (recommendationRound === 0) return initialPlaces;
 
@@ -145,8 +164,19 @@ export default function CreateItineraryStep5() {
       ...initialPlaces.filter((p) => !allSelectedNames.has(p.name) && !nextNames.has(p.name)),
     ];
 
-    return candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  }, [recommendationRound, initialPlaces, nextPlacesData, allSelectedNames]);
+    const sorted = candidates.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+    if (!centroid) return sorted;
+    return sorted.map((p) => ({
+      ...p,
+      distanceKm:
+        p.distanceKm != null
+          ? p.distanceKm
+          : p.latitude != null && p.longitude != null
+          ? Math.round(haversineKm(centroid.lat, centroid.lng, p.latitude, p.longitude) * 100) / 100
+          : undefined,
+    }));
+  }, [recommendationRound, initialPlaces, nextPlacesData, allSelectedNames, centroid]);
   const isLoading = isLoadingInitial || (isExistingItinerary && isLoadingExistingPins);
   const error = initialError || nextError;
 

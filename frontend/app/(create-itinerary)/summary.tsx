@@ -183,9 +183,19 @@ export default function ItinerarySummary() {
               </Button>
             </View>
           ) : (
-            sortedPins.map((pin, pinIndex) => (
-              <StopSection key={pin.pin_id} pin={pin} stopNumber={pinIndex + 1} />
-            ))
+            sortedPins.map((pin, pinIndex) => {
+              const placeStartIndex = sortedPins
+                .slice(0, pinIndex)
+                .reduce((sum, p) => sum + p.places.length, 0);
+              return (
+                <StopSection
+                  key={pin.pin_id}
+                  pin={pin}
+                  stopNumber={pinIndex + 1}
+                  placeStartIndex={placeStartIndex}
+                />
+              );
+            })
           )}
         </ScrollView>
 
@@ -218,21 +228,19 @@ export default function ItinerarySummary() {
   );
 }
 
-function StopSection({ pin, stopNumber }: { pin: PinData; stopNumber: number }) {
+function StopSection({ pin, stopNumber, placeStartIndex }: { pin: PinData; stopNumber: number; placeStartIndex: number }) {
   return (
     <View className="gap-3">
-      <View className="flex-row items-center gap-2">
-        <View className="h-7 w-7 items-center justify-center rounded-full bg-primary">
-          <Text className="text-xs font-bold text-primary-foreground">{stopNumber}</Text>
-        </View>
-        <Text className="text-lg font-semibold">Stop {stopNumber}</Text>
-      </View>
+      <Text className="text-lg font-semibold">Stop {stopNumber}</Text>
 
       {pin.places.map((place, i) => (
         <View
           key={`${place.name}-${i}`}
           className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4"
         >
+          <View className="h-7 w-7 items-center justify-center rounded-full bg-primary border border-border shrink-0">
+            <Text className="text-xs font-bold text-primary-foreground">{placeStartIndex + i + 1}</Text>
+          </View>
           <View className="flex-1 gap-0.5">
             <Text className="text-base font-medium">{place.name}</Text>
             {place.address ? <Text className="text-sm text-muted-foreground">{place.address}</Text> : null}
