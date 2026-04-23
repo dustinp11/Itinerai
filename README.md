@@ -8,7 +8,6 @@
 **Team:** Dustin Pham (lead), Karena Tran, Jae Yun Kim  
 **Timeline:** 5-week development cycle
 
-## Demo
 [Watch the demo](https://www.youtube.com/watch?v=rThYIQPMH5M)
 ---
 ## Setup & Running Instructions
